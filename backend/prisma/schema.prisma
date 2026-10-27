@@ -1,5 +1,5 @@
-// Esquema de la base de datos. Los modelos llegan con cada parte (grupos, secciones, educandos...);
-// la parte 0 solo deja la conexion preparada.
+// Esquema de la base de datos. Todo dato del grupo cuelga de Grupo y se consulta siempre filtrado por el grupo
+// de la sesion (D-11). Los modelos llegan con cada parte; esta es la parte 1 (grupos, usuarios y secciones).
 
 generator client {
   provider = "prisma-client-js"
@@ -8,4 +8,137 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// D-16. Admin: todo. Tesoreria: todo menos usuarios. Scouter: solo consulta de sus secciones.
+enum Rol {
+  ADMIN
+  TESORERIA
+  SCOUTER
+}
+
+model Grupo {
+  id       String   @id @default(cuid())
+  nombre   String
+  creadoEn DateTime @default(now())
+
+  secciones    Seccion[]
+  membresias   Membresia[]
+  invitaciones Invitacion[]
+}
+
+// D-3: secciones por defecto, renombrables, ordenables y archivables por grupo.
+model Seccion {
+  id        String   @id @default(cuid())
+  grupoId   String
+  grupo     Grupo    @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  nombre    String
+  // De menor a mayor edad: sirve para el paso de curso (D-2) y el precio de 2o hermano (D-4b).
+  orden     Int
+  // Clave de color del tema de la web (castores, manada, tropa, unidad, clan, scouters).
+  color     String
+  archivada Boolean  @default(false)
+  creadoEn  DateTime @default(now())
+
+  scouters     MembresiaSeccion[]
+  invitaciones InvitacionSeccion[]
+
+  @@unique([grupoId, nombre])
+  @@index([grupoId])
+}
+
+model Usuario {
+  id             String   @id @default(cuid())
+  // Siempre en minusculas y sin espacios.
+  email          String   @unique
+  nombre         String
+  hashContrasena String
+  creadoEn       DateTime @default(now())
+
+  membresias         Membresia[]
+  sesiones           Sesion[]
+  restablecimientos  Restablecimiento[]
+  invitacionesHechas Invitacion[]       @relation("InvitacionCreadaPor")
+}
+
+// Un usuario puede estar en varios grupos, con un rol distinto en cada uno.
+model Membresia {
+  id        String   @id @default(cuid())
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  grupoId   String
+  grupo     Grupo    @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  rol       Rol
+  creadoEn  DateTime @default(now())
+
+  // Solo para Scouter: las secciones que puede consultar.
+  secciones MembresiaSeccion[]
+
+  @@unique([usuarioId, grupoId])
+  @@index([grupoId])
+}
+
+model MembresiaSeccion {
+  membresiaId String
+  membresia   Membresia @relation(fields: [membresiaId], references: [id], onDelete: Cascade)
+  seccionId   String
+  seccion     Seccion   @relation(fields: [seccionId], references: [id], onDelete: Cascade)
+
+  @@id([membresiaId, seccionId])
+}
+
+// D-9: sesion guardada en el servidor; la cookie solo lleva un token aleatorio y aqui se guarda su hash.
+model Sesion {
+  id            String   @id @default(cuid())
+  hashToken     String   @unique
+  usuarioId     String
+  usuario       Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  // Grupo con el que se esta trabajando; se comprueba la membresia en cada peticion.
+  grupoActivoId String?
+  creadaEn      DateTime @default(now())
+  expiraEn      DateTime
+
+  @@index([usuarioId])
+}
+
+// D-15: invitacion de un solo uso que caduca en 7 dias. Solo se guarda el hash del token del enlace.
+model Invitacion {
+  id          String    @id @default(cuid())
+  grupoId     String
+  grupo       Grupo     @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  email       String
+  rol         Rol
+  hashToken   String    @unique
+  expiraEn    DateTime
+  usadaEn     DateTime?
+  creadaEn    DateTime  @default(now())
+  // Nulo cuando la crea el comando del servidor (D-17).
+  creadaPorId String?
+  creadaPor   Usuario?  @relation("InvitacionCreadaPor", fields: [creadaPorId], references: [id], onDelete: SetNull)
+
+  secciones InvitacionSeccion[]
+
+  @@index([grupoId])
+}
+
+model InvitacionSeccion {
+  invitacionId String
+  invitacion   Invitacion @relation(fields: [invitacionId], references: [id], onDelete: Cascade)
+  seccionId    String
+  seccion      Seccion    @relation(fields: [seccionId], references: [id], onDelete: Cascade)
+
+  @@id([invitacionId, seccionId])
+}
+
+// D-21: enlace de un solo uso, caduca en 24 horas; al usarlo se cierran todas las sesiones del usuario.
+model Restablecimiento {
+  id        String    @id @default(cuid())
+  usuarioId String
+  usuario   Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  hashToken String    @unique
+  expiraEn  DateTime
+  usadoEn   DateTime?
+  creadoEn  DateTime  @default(now())
+
+  @@index([usuarioId])
 }

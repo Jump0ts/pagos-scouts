@@ -1,7 +1,15 @@
+import cookieParser from "cookie-parser";
 import express from "express";
 import helmet from "helmet";
+import { cargarSesion, requiereGrupo, requiereRol, requiereSesion } from "./middleware/auth.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
+import { mismoOrigen } from "./middleware/origen.js";
+import { authRouter } from "./modules/auth/auth.routes.js";
 import { healthRouter } from "./modules/health/health.routes.js";
+import { invitacionesRouter } from "./modules/invitaciones/invitaciones.routes.js";
+import { restablecerRouter } from "./modules/restablecer/restablecer.routes.js";
+import { seccionesRouter } from "./modules/secciones/secciones.routes.js";
+import { usuariosRouter } from "./modules/usuarios/usuarios.routes.js";
 
 export const createApp = () => {
   const app = express();
@@ -11,8 +19,16 @@ export const createApp = () => {
   app.disable("x-powered-by");
   app.use(helmet());
   app.use(express.json({ limit: "100kb" }));
+  app.use(cookieParser());
 
   app.use("/api/health", healthRouter);
+
+  app.use("/api", mismoOrigen, cargarSesion);
+  app.use("/api/auth", authRouter);
+  app.use("/api/invitaciones", invitacionesRouter);
+  app.use("/api/restablecer", restablecerRouter);
+  app.use("/api/secciones", requiereSesion, requiereGrupo, seccionesRouter);
+  app.use("/api/usuarios", requiereSesion, requiereGrupo, requiereRol("ADMIN"), usuariosRouter);
 
   app.use("/api", notFoundHandler);
   app.use(errorHandler);

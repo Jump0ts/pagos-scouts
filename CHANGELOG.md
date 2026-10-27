@@ -17,3 +17,20 @@ still change.
   production restrictions with end-to-end checks (web → API → database).
 - `pre` environment for the home server (`deploy/pre/`): compose file, nginx site and a step-by-step guide.
 - Dependabot targeting `pre`.
+- **Part 1 — groups, users and sections (API).** Groups with their default sections; users that can belong to
+  several groups with a role in each (Admin, Treasury, Scouter); email and password sign-in (argon2id, 5 failed
+  attempts lock the email for 15 minutes) with server-side sessions in an `httpOnly` cookie; single-use invitation
+  links (7 days) and admin-generated password reset links (24 hours, closing every open session); section
+  management (create, rename, archive, reorder); CSRF protection by origin; server commands `crear-grupo` and
+  `restablecer`. Every query is scoped to the active group, with tests that try to cross groups.
+- **Part 1 — screens.** Sign-in, invitation (new or existing account) and password reset pages on a centred
+  card; header with the active group always visible and a menu to switch groups; user menu; bottom navigation
+  on phones; Settings with People (invite with Copy/Share link, change role and sections, password reset link,
+  remove), Sections (create, rename, colour, archive, reorder with accessible up/down buttons) and My account
+  (details, change password, sign out). A "no group" screen for people removed from their group. React Router,
+  TanStack Query, React Hook Form + Zod and Radix primitives styled with the project theme.
+- Users can change their own password (current password required; other sessions are closed).
+
+### Fixed
+- User-facing API messages now use proper Spanish spelling (contraseña, sesión, sección…).
+- The development proxy keeps the `Host` header, so the CSRF origin check behaves as it does behind nginx.

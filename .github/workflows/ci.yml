@@ -142,7 +142,11 @@ jobs:
           # shellcheck disable=SC2086
           docker run -d --name api --network ci $RESTRINGIDO \
             -e NODE_ENV=production -e DATABASE_URL=postgresql://scouts:scouts@db:5432/scouts \
+            -e PUBLIC_URL=https://scouts.example.test \
             pagos-scouts:ci
+          # La imagen aplica sus propias migraciones con la CLI de Prisma que lleva dentro.
+          docker run --rm --network ci -e DATABASE_URL=postgresql://scouts:scouts@db:5432/scouts \
+            pagos-scouts:ci npx --no-install prisma migrate deploy
           for i in $(seq 1 30); do
             STATUS=$(docker inspect -f '{{.State.Health.Status}}' api)
             [ "$STATUS" = healthy ] && break
@@ -175,6 +179,10 @@ jobs:
 
           # La web llega a la API y la API a la base de datos.
           curl -fsS http://localhost:8081/api/health | tee /dev/stderr | grep -q '"db":"ok"'
+
+          # Sin sesion no hay datos, y una peticion desde otro dominio se rechaza.
+          [ "$(code http://localhost:8081/api/secciones)" = 401 ]
+          [ "$(code -X POST -H 'Origin: https://otro.example' -H 'Content-Type: application/json' -d '{}' http://localhost:8081/api/auth/login)" = 403 ]
 
           # Ningun contenedor corre como root.
           [ "$(docker exec api id -u)" != "0" ] || { echo "la API corre como root"; exit 1; }

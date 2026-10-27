@@ -8,7 +8,9 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
   // En desarrollo la API corre aparte (npm run backend:dev); en el servidor la pasa el nginx de la web.
-  server: { proxy: { "/api": "http://localhost:4000" } },
+  // changeOrigin: false conserva el Host de la web, como hacen los nginx en el servidor; si no, la proteccion
+  // CSRF de la API (Origin == Host) rechazaria todo lo que cambia datos.
+  server: { proxy: { "/api": { target: "http://localhost:4000", changeOrigin: false } } },
   test: {
     environment: "jsdom",
     globals: true,

@@ -1,10 +1,7 @@
 import request from "supertest";
-import { createApp } from "../src/app.js";
+import { app } from "./helpers.js";
 
-const app = createApp();
-const hayBaseDeDatos = Boolean(process.env.TEST_DATABASE_URL);
-
-describe.skipIf(!hayBaseDeDatos)("GET /api/health", () => {
+describe("GET /api/health", () => {
   it("responde ok cuando la base de datos contesta", async () => {
     const res = await request(app).get("/api/health");
 
@@ -25,5 +22,12 @@ describe("rutas desconocidas", () => {
     const res = await request(app).get("/api/no-existe");
 
     expect(res.headers["x-powered-by"]).toBeUndefined();
+  });
+
+  it("responden 400 legible ante un JSON mal formado", async () => {
+    const res = await request(app).post("/api/auth/login").set("Content-Type", "application/json").send("{roto");
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/JSON/);
   });
 });

@@ -58,6 +58,23 @@ sudo certbot --nginx -d pre-scouts.josanfersal.dev
 Abre `https://pre-scouts.josanfersal.dev`: la pantalla "Estado del sistema" debe mostrar la API y la base de
 datos en verde.
 
+### 5. Primer grupo de pruebas (a partir de la parte 1)
+
+Aplica las migraciones y crea un grupo **inventado** con tu email como administrador. El comando imprime el
+enlace de invitación: ábrelo, elige tu contraseña y ya estás dentro.
+
+```bash
+C="docker compose -f deploy/pre/docker-compose.yml --env-file deploy/pre/.env.pre"
+$C exec api npx prisma migrate deploy
+$C exec api node dist/cli/crear-grupo.js --nombre "Grupo de pruebas" --admin tu@email
+```
+
+Si alguna vez pierdes la contraseña del único administrador:
+
+```bash
+$C exec api node dist/cli/restablecer.js --email tu@email
+```
+
 ## Actualizar pre
 
 Cada vez que se mergea un PR a `pre`:
