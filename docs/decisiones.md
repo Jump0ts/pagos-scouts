@@ -51,6 +51,11 @@ No se borra la antigua.
 | D-20 | **React Hook Form + Zod** | Formularios de la web, validados con Zod, la misma librería que el back. |
 | D-21 | **Restablecer contraseña con un enlace generado por un administrador** | Enlace de un solo uso que caduca en 24 horas. Al usarlo se cierran todas las sesiones de esa persona. Si quien olvida la contraseña es el único administrador, se usa el comando `restablecer` del servidor. |
 
+| D-22 | **Login en una tarjeta centrada** | Logo, nombre y formulario en una tarjeta sobre el fondo del tema. Las pantallas de invitación y de restablecer contraseña usan el mismo estilo. Bajo el formulario se explica que, si se olvida la contraseña, hay que pedir un enlace a un administrador. |
+| D-23 | **Cambio de grupo en la cabecera** | Bajo "Tesorería" se ve siempre el nombre del grupo activo; si el usuario tiene varios, al tocarlo se abre un menú para cambiar (Radix Dropdown Menu). |
+| D-24 | **Ajustes con pestañas** | Una entrada "Ajustes" en la navegación con pestañas Personas · Secciones · Mi cuenta. Quien no es administrador solo ve "Mi cuenta". |
+| D-25 | **Enlaces con Copiar y Compartir** | Las invitaciones y los enlaces de restablecer se muestran con un botón "Copiar" y, donde el navegador lo permite (móvil), "Compartir", que abre el menú del sistema con un mensaje ya escrito. La app nunca envía nada por su cuenta. |
+
 **Nota sobre ramas:** la parte 1 sale de `pre` y no de `develop`, porque necesita el esqueleto de la parte 0, que aún
 no ha llegado a `develop` (solo llega al cerrar la release).
 
