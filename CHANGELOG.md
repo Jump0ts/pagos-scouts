@@ -42,6 +42,15 @@ still change.
   Re-importing recognises existing children and families and only updates their section. CSV files are read in
   UTF-8 or Windows-1252.
 
+- **Part 3 — events and charges.** Events of two kinds (whole section, or only the children signed up) with
+  dates, a price per section and optional sibling prices (1st pays the section price, fixed prices for the 2nd and
+  the 3rd onwards, never above the section price). Each child gets a charge; amounts are stored in cents. Charges
+  follow the roster on their own: new children in an open event get theirs, leavers' unpaid charges are cancelled,
+  and sibling positions are recalculated (if the eldest leaves, the next one pays the full price). Changing prices
+  recalculates unpaid charges and keeps manual adjustments. Per-child adjustments with an optional reason (hidden
+  from scouters), removing a child from an event and adding them back. Screens: event list with collected
+  progress, event detail grouped by section with status filters, and a single-page form to create and edit.
+
 ### Fixed
 - User-facing API messages now use proper Spanish spelling (contraseña, sesión, sección…).
 - The development proxy keeps the `Host` header, so the CSRF origin check behaves as it does behind nginx.

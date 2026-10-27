@@ -6,6 +6,9 @@ import { LoginPagina } from "./features/auth/LoginPagina";
 import { RestablecerPagina } from "./features/auth/RestablecerPagina";
 import { RutaProtegida, SoloRol } from "./features/auth/RutaProtegida";
 import { EducandosPagina } from "./features/educandos/EducandosPagina";
+import { EventoDetallePagina } from "./features/eventos/EventoDetallePagina";
+import { EventoFormularioPagina } from "./features/eventos/EventoFormularioPagina";
+import { EventosPagina } from "./features/eventos/EventosPagina";
 import { ImportarListadoPagina } from "./features/importaciones/ImportarListadoPagina";
 import { InicioPagina } from "./features/inicio/InicioPagina";
 import { SeccionesAjustes } from "./features/secciones/SeccionesAjustes";
@@ -27,9 +30,15 @@ export const rutas = [
         children: [
           { index: true, element: <InicioPagina /> },
           { path: "educandos", element: <EducandosPagina /> },
+          { path: "eventos", element: <EventosPagina /> },
+          { path: "eventos/:id", element: <EventoDetallePagina /> },
           {
             element: <SoloRol roles={["ADMIN", "TESORERIA"]} />,
-            children: [{ path: "educandos/importar", element: <ImportarListadoPagina /> }],
+            children: [
+              { path: "educandos/importar", element: <ImportarListadoPagina /> },
+              { path: "eventos/nuevo", element: <EventoFormularioPagina /> },
+              { path: "eventos/:id/editar", element: <EventoFormularioPagina /> },
+            ],
           },
           {
             path: "ajustes",
