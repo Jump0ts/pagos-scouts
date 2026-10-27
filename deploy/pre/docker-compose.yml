@@ -1,0 +1,81 @@
+# Entorno pre en el servidor domestico (D-10b, D-13). Desde la raiz del repo, en la rama pre:
+#   docker compose -f deploy/pre/docker-compose.yml --env-file deploy/pre/.env.pre up -d --build
+# Solo datos inventados: nunca se cargan aqui datos reales de educandos ni Excels del banco.
+
+name: pagos-scouts-pre
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?falta POSTGRES_USER en .env.pre}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD en .env.pre}
+      POSTGRES_DB: ${POSTGRES_DB:?falta POSTGRES_DB en .env.pre}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # Sin puertos publicados: la base de datos solo es visible para la API.
+
+  api:
+    build:
+      context: ../..
+      dockerfile: backend/Dockerfile
+    image: pagos-scouts:pre
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 256m
+    # Sin puertos publicados: solo le llega trafico desde el contenedor web.
+
+  # Copia la web compilada desde la imagen a un volumen y termina. Asi la web que se sirve es siempre la de la
+  # misma imagen que la API.
+  web-files:
+    image: pagos-scouts:pre
+    depends_on:
+      api:
+        condition: service_started
+    user: "0"
+    entrypoint: ["sh", "-c", "rm -rf /srv/web/* && cp -r /opt/deploy/web/. /srv/web/"]
+    volumes:
+      - web:/srv/web
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER]
+    security_opt: ["no-new-privileges:true"]
+    restart: "no"
+
+  web:
+    image: nginx:1.31-alpine
+    restart: unless-stopped
+    depends_on:
+      web-files:
+        condition: service_completed_successfully
+    user: "101:101"
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 64m
+    volumes:
+      - web:/usr/share/nginx/html:ro
+      - ../web-nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      # Solo en loopback: al dominio se llega por el nginx del servidor, que pone el TLS.
+      - "127.0.0.1:${WEB_PORT:?falta WEB_PORT en .env.pre}:8080"
+
+volumes:
+  db_data:
+  web:

@@ -1,0 +1,35 @@
+# El contexto de construccion de la imagen es la raiz del repo: solo debe entrar lo necesario,
+# y nunca secretos, datos reales, historial de git ni dependencias locales.
+.git
+.github
+**/node_modules
+**/coverage
+**/dist
+
+# Secretos y datos
+**/.env
+**/.env.*
+!**/.env.*.example
+**/*.pem
+**/*.key
+**/*.sql.gz
+**/*.xls
+**/*.xlsx
+**/*.csv
+
+# Nada de tests, herramientas locales ni lo que no forma parte de la app
+**/*.test.*
+backend/tests
+backend/vitest.config.ts
+backend/eslint.config.js
+apps/web/src/test
+apps/web/eslint.config.js
+docs
+prototipo
+maquetas
+.claude
+.impeccable
+
+# Despliegue: solo la config del nginx de la web
+deploy/*
+!deploy/web-nginx
