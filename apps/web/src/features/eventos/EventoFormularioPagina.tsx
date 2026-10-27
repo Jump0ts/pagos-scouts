@@ -124,7 +124,7 @@ export const EventoFormularioPagina = () => {
         const res = await editar.mutateAsync({ id: id!, ...datos });
         const aviso =
           res.recalculados || res.sinCambiar
-            ? `Se han recalculado ${res.recalculados} cargos.${res.sinCambiar ? ` ${res.sinCambiar} con importe ajustado a mano no se han tocado.` : ""}`
+            ? `Se han recalculado ${res.recalculados} cargos.${res.sinCambiar ? ` ${res.sinCambiar} con importe ajustado a mano o con pagos no se han tocado.` : ""}`
             : "Cambios guardados.";
         navigate(`/eventos/${id}`, { state: { aviso } });
       } else {

@@ -7,9 +7,12 @@ import { Cargando } from "@/components/Cargando";
 import { Confirmar } from "@/components/Confirmar";
 import { Dialogo } from "@/components/Dialogo";
 import { usePerfil } from "@/features/auth/useSesion";
+import { ESTADOS } from "@/features/eventos/eventos.constants";
 import { ChipSeccion } from "@/features/secciones/ChipSeccion";
 import { useSecciones } from "@/features/secciones/secciones.api";
 import { mensajeDeError } from "@/utils/api";
+import { cx } from "@/utils/cx";
+import { euros } from "@/utils/dinero";
 import { EducandoDialogo } from "./EducandoDialogo";
 import {
   useBorrarEducando, useBorrarFamilia, useCambiarBaja, useEditarEducando, useEditarFamilia, useFichaFamilia,
@@ -17,7 +20,9 @@ import {
 import type { HijoEnFicha } from "./educandos.types";
 import { ResponsablesCampos } from "./ResponsablesCampos";
 
-const claseItem = "flex cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm outline-none data-[highlighted]:bg-hundido";
+const fechaLarga = (f: string) => new Date(`${f}T12:00:00`).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
+
+const claseItem ="flex cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm outline-none data-[highlighted]:bg-hundido";
 
 type Pendiente =
   | { tipo: "borrar-hijo"; hijo: HijoEnFicha }
@@ -134,6 +139,21 @@ export const FichaFamiliaDialogo = ({ familiaId, onCerrar }: { familiaId: string
                           {suya ? <ChipSeccion seccion={suya} /> : <span className="text-xs text-suave">Sin sección este curso</span>}
                           {hijo.deBaja && <span className="rounded-full bg-rojo-claro px-2 py-0.5 text-xs font-semibold text-rojo">De baja</span>}
                         </span>
+                        {hijo.cargos.length > 0 && (
+                          <ul className="mt-2 flex flex-col gap-1" aria-label={`Pagos de ${hijo.nombre}`}>
+                            {hijo.cargos.map((c) => (
+                              <li key={c.id} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
+                                <span className="min-w-0 truncate">{c.evento.nombre}</span>
+                                <span className="text-suave tabular-nums">
+                                  {c.estado === "PARCIAL" ? `${euros(c.pagadoCentimos)} de ${euros(c.importeCentimos)}` : euros(c.importeCentimos)}
+                                </span>
+                                <span className={cx("rounded-full px-2 py-0.5 text-xs font-semibold", ESTADOS[c.estado].clase)}>
+                                  {ESTADOS[c.estado].etiqueta}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
                       </span>
                       <Menu.Root>
                         <Menu.Trigger
@@ -175,6 +195,25 @@ export const FichaFamiliaDialogo = ({ familiaId, onCerrar }: { familiaId: string
               <Boton variante="secundario" tamano="pequeno" className="w-fit" onClick={() => setAnadiendoHermano(true)}>
                 <Plus className="size-4" aria-hidden /> Añadir hermano o hermana
               </Boton>
+            </section>
+
+            <section aria-labelledby="ficha-pagos" className="flex flex-col gap-3">
+              <h3 id="ficha-pagos" className="text-xs font-bold tracking-[.12em] text-suave uppercase">Pagos recibidos</h3>
+              {familia.pagos.length ? (
+                <ul className="divide-y divide-linea overflow-hidden rounded-2xl ring-1 ring-linea">
+                  {familia.pagos.map((p) => (
+                    <li key={p.id} className="flex items-baseline justify-between gap-3 px-4 py-2.5">
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-semibold">{p.concepto}</span>
+                        <span className="text-xs text-suave">{p.fecha ? fechaLarga(p.fecha) : "Sin fecha"}</span>
+                      </span>
+                      <span className="font-semibold tabular-nums">{euros(p.importeCentimos)}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-suave">Aún no hay pagos de esta familia.</p>
+              )}
             </section>
 
             {esAdmin && (

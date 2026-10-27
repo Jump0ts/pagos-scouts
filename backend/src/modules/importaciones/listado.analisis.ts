@@ -9,7 +9,7 @@ type Grupo = {
   responsables: Persona[];
   textos: string[];
   apellidosHijos: Set<string>;
-  ninos: { fila: number; bloque: number; nino: string }[];
+  ninos: { fila: number; bloque: number; nino: string; pagado: string[] }[];
   avisos: string[];
 };
 
@@ -83,6 +83,7 @@ export const analizarListado = async (grupoId: string, leido: ListadoLeido): Pro
         ...separarNombre(n.nino),
         existenteId: existente?.id ?? null,
         seccionActualId: existente?.matriculas[0]?.seccionId ?? null,
+        pagado: n.pagado,
         familiaExistenteId: existente?.familiaId ?? null,
       };
     });
@@ -129,6 +130,7 @@ export const analizarListado = async (grupoId: string, leido: ListadoLeido): Pro
     bloques,
     familias,
     columnasIgnoradas: leido.columnasIgnoradas,
+    columnasPago: leido.columnasPago,
     noAparecen,
     cursoSugerido: curso?.nombre ?? nombreCursoPara(),
   };

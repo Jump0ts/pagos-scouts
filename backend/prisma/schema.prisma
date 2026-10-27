@@ -29,6 +29,8 @@ model Grupo {
   familias     Familia[]
   educandos    Educando[]
   eventos      Evento[]
+  movimientos  Movimiento[]
+  pagadores    Pagador[]
 }
 
 // D-3: secciones por defecto, renombrables, ordenables y archivables por grupo.
@@ -82,6 +84,8 @@ model Familia {
 
   responsables Responsable[]
   educandos    Educando[]
+  movimientos  Movimiento[]
+  pagadores    Pagador[]
 
   @@index([grupoId])
 }
@@ -183,6 +187,8 @@ model Cargo {
   posicionHermano          Int         @default(1)
   creadoEn                 DateTime    @default(now())
 
+  asignaciones Asignacion[]
+
   @@unique([eventoId, educandoId])
   @@index([educandoId])
 }
@@ -211,10 +217,12 @@ model Usuario {
   hashContrasena String
   creadoEn       DateTime @default(now())
 
-  membresias         Membresia[]
-  sesiones           Sesion[]
-  restablecimientos  Restablecimiento[]
-  invitacionesHechas Invitacion[]       @relation("InvitacionCreadaPor")
+  membresias              Membresia[]
+  sesiones                Sesion[]
+  restablecimientos       Restablecimiento[]
+  invitacionesHechas      Invitacion[]       @relation("InvitacionCreadaPor")
+  movimientosImportados   Movimiento[]       @relation("MovimientoImportadoPor")
+  movimientosClasificados Movimiento[]       @relation("MovimientoClasificadoPor")
 }
 
 // Un usuario puede estar en varios grupos, con un rol distinto en cada uno.
@@ -297,4 +305,89 @@ model Restablecimiento {
   creadoEn  DateTime  @default(now())
 
   @@index([usuarioId])
+}
+
+// D-41: BANCO viene del Excel del banco; LISTADO, de una marca "Pagado" del listado (D-44). Los pagos a mano
+// llegan en la parte 6.
+enum OrigenMovimiento {
+  BANCO
+  LISTADO
+}
+
+enum EstadoMovimiento {
+  CLASIFICADO
+  DUDA
+}
+
+// Por que un movimiento esta en Dudas (D-5).
+enum MotivoDuda {
+  PAGADOR_DESCONOCIDO
+  FAMILIA_SIN_CONFIRMAR
+  NO_CUADRA
+  VARIAS_COMBINACIONES
+  POSIBLE_YA_MARCADO
+  DESHECHO
+}
+
+// Un ingreso: del banco (solo fecha, nombre de quien paga e importe) o una marca del listado.
+model Movimiento {
+  id               String           @id @default(cuid())
+  grupoId          String
+  grupo            Grupo            @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  origen           OrigenMovimiento
+  // D-45: el Nº mov de Unicaja, que con la fecha y el importe reconoce lo ya importado.
+  numeroBanco      Int?
+  fecha            DateTime?        @db.Date
+  // El nombre de quien paga tal como viene en el banco, o la columna del listado.
+  concepto         String
+  importeCentimos  Int
+  estado           EstadoMovimiento
+  motivoDuda       MotivoDuda?
+  // Clasificado: la familia que paga. En Dudas: la mejor sugerencia, con sus cargos preseleccionados.
+  familiaId        String?
+  familia          Familia?         @relation(fields: [familiaId], references: [id], onDelete: SetNull)
+  cargosSugeridos  String[]         @default([])
+  // Quien lo clasifico; nulo en un movimiento clasificado = lo clasifico la app sola (D-5).
+  clasificadoPorId String?
+  clasificadoPor   Usuario?         @relation("MovimientoClasificadoPor", fields: [clasificadoPorId], references: [id], onDelete: SetNull)
+  clasificadoEn    DateTime?
+  importadoPorId   String?
+  importadoPor     Usuario?         @relation("MovimientoImportadoPor", fields: [importadoPorId], references: [id], onDelete: SetNull)
+  creadoEn         DateTime         @default(now())
+
+  asignaciones Asignacion[]
+
+  @@unique([grupoId, numeroBanco, fecha, importeCentimos])
+  @@index([grupoId, estado])
+  @@index([familiaId])
+}
+
+// Que parte de un movimiento paga que cargo. Lo pagado de un cargo es la suma de sus asignaciones.
+model Asignacion {
+  id              String     @id @default(cuid())
+  movimientoId    String
+  movimiento      Movimiento @relation(fields: [movimientoId], references: [id], onDelete: Cascade)
+  // Restrict: un cargo con pagos no se borra (ni su evento, ni el niño, ni su familia).
+  cargoId         String
+  cargo           Cargo      @relation(fields: [cargoId], references: [id], onDelete: Restrict)
+  importeCentimos Int
+
+  @@unique([movimientoId, cargoId])
+  @@index([cargoId])
+}
+
+// D-1: nombre de quien paga (tal como sale en el banco) aprendido para una familia. Se aprende en Dudas (parte 5).
+model Pagador {
+  id        String   @id @default(cuid())
+  grupoId   String
+  grupo     Grupo    @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  familiaId String
+  familia   Familia  @relation(fields: [familiaId], references: [id], onDelete: Cascade)
+  // Palabras normalizadas y ordenadas: "GIL FERRER LUIS" reconoce tambien "LUIS GIL FERRER".
+  clave     String
+  nombre    String
+  creadoEn  DateTime @default(now())
+
+  @@unique([grupoId, clave])
+  @@index([familiaId])
 }

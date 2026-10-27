@@ -51,6 +51,22 @@ still change.
   from scouters), removing a child from an event and adding them back. Screens: event list with collected
   progress, event detail grouped by section with status filters, and a single-page form to create and edit.
 
+- **Part 4 — bank movements and automatic classification.** Import the bank's movements Excel in two steps
+  (analyse, then confirm; the file is never stored). Only incoming payments are kept (date, payer name, amount);
+  outgoing ones are counted and ignored. Movements already imported are recognised by the bank's movement number,
+  so overlapping periods can be uploaded. A payment is classified on its own only when the family is certain
+  (learned payer, or first name and every surname of a guardian) and exactly one combination of that family's
+  pending charges in the current school year adds up to the amount; everything else goes to Doubts with the reason
+  and the best suggestion. Any classification can be undone. A new Movements tab (Admin and Treasury only) with
+  Doubts / Classified lists; events now show what has been collected, and the family sheet shows each child's
+  charges and the payments received.
+- "Pagado" marks in the roster: when re-importing it, each column with marks can be linked to an event and every
+  mark becomes a payment for what that charge still owes. A later bank payment that no longer fits is flagged as
+  possibly already marked.
+- Charges with payments are protected: they keep their amount when prices change, are not cancelled when the child
+  leaves, cannot be removed from the event or adjusted below what has been paid, and block deleting the event, the
+  child or the family.
+
 ### Fixed
 - User-facing API messages now use proper Spanish spelling (contraseña, sesión, sección…).
 - The development proxy keeps the `Host` header, so the CSRF origin check behaves as it does behind nginx.
