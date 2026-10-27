@@ -11,6 +11,9 @@ if (!/test/i.test(nombreBase)) {
 }
 
 const TABLAS = [
+  "Cargo",
+  "PrecioSeccion",
+  "Evento",
   "Matricula",
   "Educando",
   "Responsable",

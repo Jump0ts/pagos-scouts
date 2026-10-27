@@ -69,6 +69,20 @@ No se borra la antigua.
 | D-32 | **Pantalla Educandos: lista por secciones y ficha de familia** | Buscador y filtros por sección; al tocar un niño se abre la ficha de su familia (hermanos, responsables y, más adelante, pagadores y pagos). Un scouter solo ve los niños de sus secciones y no abre fichas de familia. |
 | D-33 | **Las columnas de pagos del Excel se ignoran por ahora** | Cuando existan los eventos (parte 3) se podrán leer como pagos ya hechos. |
 
+## Bloque 6 — Parte 3: eventos y cargos (2026-10-27)
+
+| # | Decisión | Detalle |
+|---|---|---|
+| D-34 | **Precio de hermanos opcional y por posición** | Sustituye en parte a D-4/D-4b. Cada evento decide si tiene precio de hermanos. Si lo tiene: el 1º paga el precio de su sección, el 2º un precio fijo y el 3º y siguientes otro (si no se indica, el del 2º), iguales para todas las secciones. Nunca más que el precio de su sección. Solo cuentan los hermanos con cargo en ese mismo evento; el mayor (por fecha de nacimiento o, si falta, por sección) es el 1º. |
+| D-35 | **Ajustes por niño con motivo** | Cada cargo admite un importe ajustado (0 € = exento) con un motivo opcional, o quitarlo del evento. El motivo solo lo ven Admin y Tesorería. Decidido por el usuario frente a la recomendación de no guardar motivos. |
+| D-36 | **Las deudas se ajustan solas** | Altas: en un evento "toda la sección" abierto (hoy ≤ fecha de fin) se crea el cargo. Bajas: los cargos pendientes sin pagos se anulan; los pagados o a medias se quedan. Cambio de sección: se actualiza su precio. Tras cualquier cambio se recalculan las posiciones de hermanos: si se anula el cargo del mayor, el siguiente pasa a pagar el precio completo (desaparece el más barato). |
+| D-37 | **Cambiar precios recalcula los pendientes** | Los cargos sin pagos se recalculan; los ajustados a mano conservan su importe. La app dice cuántos no se han tocado. |
+| D-38 | **El scouter ve estado e importes de sus secciones** | Ve los eventos de sus secciones y, por niño, estado e importes (debido y pagado), pero no los motivos de los ajustes. Decidido por el usuario frente a la recomendación de mostrar solo el estado. |
+| D-39 | **Pantallas: lista con progreso y detalle por sección** | Lista de eventos activos con su barra de cobrado (los pasados, plegados). Detalle con resumen, filtros por estado y sección, y los niños agrupados por sección. Crear y editar en un formulario de una pantalla. |
+| D-40 | **Las marcas "Pagado" del Excel, en la parte 4** | Se importarán como pagos ya hechos cuando exista el modelo de pagos. |
+
+Los importes se guardan en céntimos (enteros), para no tener errores de redondeo.
+
 **Nota sobre ramas:** la parte 1 sale de `pre` y no de `develop`, porque necesita el esqueleto de la parte 0, que aún
 no ha llegado a `develop` (solo llega al cerrar la release).
 

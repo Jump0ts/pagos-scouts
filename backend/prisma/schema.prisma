@@ -28,6 +28,7 @@ model Grupo {
   cursos       Curso[]
   familias     Familia[]
   educandos    Educando[]
+  eventos      Evento[]
 }
 
 // D-3: secciones por defecto, renombrables, ordenables y archivables por grupo.
@@ -46,6 +47,8 @@ model Seccion {
   scouters     MembresiaSeccion[]
   invitaciones InvitacionSeccion[]
   matriculas   Matricula[]
+  precios      PrecioSeccion[]
+  cargos       Cargo[]
 
   @@unique([grupoId, nombre])
   @@index([grupoId])
@@ -62,6 +65,7 @@ model Curso {
   creadoEn DateTime @default(now())
 
   matriculas Matricula[]
+  eventos    Evento[]
 
   @@unique([grupoId, nombre])
   @@index([grupoId])
@@ -106,9 +110,81 @@ model Educando {
   creadoEn        DateTime  @default(now())
 
   matriculas Matricula[]
+  cargos     Cargo[]
 
   @@index([grupoId])
   @@index([familiaId])
+}
+
+// D-4: "toda la sección" (cuota, censo) genera cargo a cada niño matriculado; "con apuntados", solo a los marcados.
+enum TipoEvento {
+  TODA_SECCION
+  CON_APUNTADOS
+}
+
+// Importes en céntimos (enteros): sin errores de redondeo.
+model Evento {
+  id                    String     @id @default(cuid())
+  grupoId               String
+  grupo                 Grupo      @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  cursoId               String
+  curso                 Curso      @relation(fields: [cursoId], references: [id], onDelete: Cascade)
+  nombre                String
+  tipo                  TipoEvento
+  fechaInicio           DateTime   @db.Date
+  // Hasta cuando esta abierto: los niños que entran despues ya no reciben cargo automatico (D-36).
+  fechaFin              DateTime   @db.Date
+  // D-34: precio de hermanos opcional; 1º paga el de su seccion, 2º y 3º+ precios fijos.
+  descuentoHermanos     Boolean    @default(false)
+  precioSegundoCentimos Int?
+  precioTerceroCentimos Int?
+  creadoEn              DateTime   @default(now())
+
+  precios PrecioSeccion[]
+  cargos  Cargo[]
+
+  @@index([grupoId, cursoId])
+}
+
+model PrecioSeccion {
+  eventoId        String
+  evento          Evento  @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+  seccionId       String
+  seccion         Seccion @relation(fields: [seccionId], references: [id], onDelete: Restrict)
+  importeCentimos Int
+
+  @@id([eventoId, seccionId])
+}
+
+// ACTIVO: debe pagarlo. EXCLUIDO: quitado a mano (no se vuelve a crear solo). ANULADO: por baja o porque su
+// seccion ya no esta en el evento (vuelve a ACTIVO si se reincorpora).
+enum EstadoCargo {
+  ACTIVO
+  EXCLUIDO
+  ANULADO
+}
+
+// Lo que debe un educando en un evento.
+model Cargo {
+  id                       String      @id @default(cuid())
+  eventoId                 String
+  evento                   Evento      @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+  educandoId               String
+  educando                 Educando    @relation(fields: [educandoId], references: [id], onDelete: Cascade)
+  // Seccion por la que se le cobra (la de su matricula en el curso del evento).
+  seccionId                String
+  seccion                  Seccion     @relation(fields: [seccionId], references: [id], onDelete: Restrict)
+  estado                   EstadoCargo @default(ACTIVO)
+  importeCalculadoCentimos Int
+  // D-35: ajuste a mano (0 = exento) y su motivo, que solo ven Admin y Tesoreria.
+  importeAjustadoCentimos  Int?
+  motivoAjuste             String?
+  // 1 = el mayor de los hermanos con cargo en este evento.
+  posicionHermano          Int         @default(1)
+  creadoEn                 DateTime    @default(now())
+
+  @@unique([eventoId, educandoId])
+  @@index([educandoId])
 }
 
 // La sección de un niño en un curso. bajaEn marca que dejó el grupo ese curso (D-30): se conserva el historial.

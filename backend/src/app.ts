@@ -7,6 +7,7 @@ import { mismoOrigen } from "./middleware/origen.js";
 import { authRouter } from "./modules/auth/auth.routes.js";
 import { cursosRouter } from "./modules/cursos/cursos.routes.js";
 import { educandosRouter } from "./modules/educandos/educandos.routes.js";
+import { eventosRouter } from "./modules/eventos/eventos.routes.js";
 import { familiasRouter } from "./modules/familias/familias.routes.js";
 import { importacionesRouter } from "./modules/importaciones/importaciones.routes.js";
 import { healthRouter } from "./modules/health/health.routes.js";
@@ -35,6 +36,7 @@ export const createApp = () => {
   app.use("/api/cursos", requiereSesion, requiereGrupo, cursosRouter);
   app.use("/api/educandos", requiereSesion, requiereGrupo, educandosRouter);
   app.use("/api/familias", requiereSesion, requiereGrupo, familiasRouter);
+  app.use("/api/eventos", requiereSesion, requiereGrupo, eventosRouter);
   app.use("/api/importaciones", requiereSesion, requiereGrupo, importacionesRouter);
   app.use("/api/usuarios", requiereSesion, requiereGrupo, requiereRol("ADMIN"), usuariosRouter);
 
