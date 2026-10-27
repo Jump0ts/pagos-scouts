@@ -90,6 +90,8 @@ No se borra la antigua.
 | D-43 | **Se cuadra contra todo lo pendiente del curso** | Un pago se intenta cuadrar con los cargos pendientes o a medias de la familia en el curso activo, aunque el evento haya terminado. Cada cargo de la combinación se paga entero (lo que le falta). Si hay más de una combinación posible, va a Dudas (D-5). Los movimientos se procesan por orden de fecha. |
 | D-44 | **Las marcas "Pagado" del listado crean pagos** | Sustituye a D-33 y concreta D-40. Al importar el listado se elige a qué evento corresponde cada columna con marcas; cada "Pagado" crea un pago "marcado en el listado" por lo que le falta al cargo. Si después llega del banco un pago de esa familia que ya no cuadra con nada, va a Dudas avisando de que puede estar ya marcado en el listado. |
 | D-45 | **Un movimiento ya importado se reconoce por su Nº mov** | El Nº mov de Unicaja, junto con la fecha y el importe, identifica cada movimiento: se pueden subir Excel de periodos que se solapen sin duplicar nada. |
+| D-46 | **El pago a mano llega en la parte 5, junto con Dudas** | Adelanta parte de la parte 6. Se apunta fecha, quién paga, importe y cómo se pagó, y en la misma pantalla se elige la familia y a qué deudas va, con el mismo reparto que se usa para resolver una duda. |
+| D-47 | **Un pago a mano no se cuenta dos veces** | Al importar el banco, si ya hay un pago a mano de la misma familia y el mismo importe en fechas cercanas, el del banco va a Dudas con el aviso «¿Ya apuntado a mano?». Nunca se suma dos veces sin que lo decida el usuario. |
 
 Los importes se guardan en céntimos (enteros), para no tener errores de redondeo.
 
