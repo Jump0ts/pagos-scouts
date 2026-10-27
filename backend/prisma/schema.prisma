@@ -1,0 +1,11 @@
+// Esquema de la base de datos. Los modelos llegan con cada parte (grupos, secciones, educandos...);
+// la parte 0 solo deja la conexion preparada.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
