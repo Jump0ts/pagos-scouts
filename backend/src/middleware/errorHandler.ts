@@ -7,7 +7,12 @@ export const notFoundHandler: RequestHandler = (_req, _res, next) => {
 
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err instanceof HttpError) {
-    res.status(err.status).json({ error: err.message });
+    res.status(err.status).json(err.campos ? { error: err.message, campos: err.campos } : { error: err.message });
+    return;
+  }
+  // JSON mal formado en el cuerpo de la peticion.
+  if (err instanceof SyntaxError && "status" in err && err.status === 400) {
+    res.status(400).json({ error: "El cuerpo de la peticion no es JSON valido" });
     return;
   }
   // Cualquier otro error es un fallo nuestro: se registra, pero al cliente no se le dan detalles.

@@ -38,6 +38,22 @@ No se borra la antigua.
 | D-12 | **nginx propio delante de la API** | Una sola imagen lleva la API y la web compilada (como en My Money). Un contenedor nginx sin root, de solo lectura y sin capabilities, sirve la web con sus cabeceras de seguridad y pasa `/api` al contenedor de la API. El nginx del servidor solo termina TLS. |
 | D-13 | **Pre lo lanza el usuario** | Claude prepara `deploy/pre/` (compose, `.env.pre.example`, nginx y guía). El usuario crea el DNS y ejecuta los comandos en su servidor; Claude no toca DNS ni servidor. |
 
+## Bloque 4 — Parte 1: grupos, usuarios y secciones (2026-10-27)
+
+| # | Decisión | Detalle |
+|---|---|---|
+| D-14 | **Email y contraseña** | Contraseñas con argon2id. Tras 5 intentos fallidos para un mismo email, espera de 15 minutos. Sin envío de correos. |
+| D-15 | **Altas por enlace de invitación** | Un administrador crea la invitación (email, rol y, para Scouter, sus secciones) y obtiene un enlace de un solo uso que caduca en 7 días. Lo envía él por el medio que quiera. Cada persona elige su propia contraseña. |
+| D-16 | **Roles: Admin, Tesorería y Scouter** | Admin: todo, incluidos usuarios y ajustes. Tesorería: pagos, eventos, educandos, Dudas e importaciones, pero no usuarios. Scouter: solo consulta quién ha pagado y quién no en sus secciones; no ve importes de otras familias ni movimientos del banco. Un usuario puede pertenecer a varios grupos con un rol distinto en cada uno. |
+| D-17 | **Primer grupo por comando en el servidor** | `crear-grupo` crea el grupo con sus secciones por defecto y devuelve la invitación de su primer administrador. No existe ninguna pantalla pública para crear grupos. |
+| D-18 | **React Router** | Enrutado de la web, con rutas protegidas por rol. |
+| D-19 | **TanStack Query** | Datos de la API en la web: caché, estados de carga y error, y refresco tras guardar. |
+| D-20 | **React Hook Form + Zod** | Formularios de la web, validados con Zod, la misma librería que el back. |
+| D-21 | **Restablecer contraseña con un enlace generado por un administrador** | Enlace de un solo uso que caduca en 24 horas. Al usarlo se cierran todas las sesiones de esa persona. Si quien olvida la contraseña es el único administrador, se usa el comando `restablecer` del servidor. |
+
+**Nota sobre ramas:** la parte 1 sale de `pre` y no de `develop`, porque necesita el esqueleto de la parte 0, que aún
+no ha llegado a `develop` (solo llega al cerrar la release).
+
 ## Consecuencias del bloque 1 en el modelo de datos
 
 - `Educando.fechaNacimiento` (opcional), necesaria para D-4b.

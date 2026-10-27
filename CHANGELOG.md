@@ -17,3 +17,9 @@ still change.
   production restrictions with end-to-end checks (web → API → database).
 - `pre` environment for the home server (`deploy/pre/`): compose file, nginx site and a step-by-step guide.
 - Dependabot targeting `pre`.
+- **Part 1 — groups, users and sections (API).** Groups with their default sections; users that can belong to
+  several groups with a role in each (Admin, Treasury, Scouter); email and password sign-in (argon2id, 5 failed
+  attempts lock the email for 15 minutes) with server-side sessions in an `httpOnly` cookie; single-use invitation
+  links (7 days) and admin-generated password reset links (24 hours, closing every open session); section
+  management (create, rename, archive, reorder); CSRF protection by origin; server commands `crear-grupo` and
+  `restablecer`. Every query is scoped to the active group, with tests that try to cross groups.
