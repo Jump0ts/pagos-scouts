@@ -13,7 +13,7 @@ const seleccion = { id: true, nombre: true, orden: true, color: true, archivada:
 
 const nombreRepetido = (error: unknown) => {
   if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-    return conflict("Ya hay una seccion con ese nombre");
+    return conflict("Ya hay una sección con ese nombre");
   }
   return error;
 };
@@ -70,7 +70,7 @@ seccionesRouter.patch(
     const { count } = await prisma.seccion
       .updateMany({ where: { id: req.params.id, grupoId: req.grupo!.id }, data: datos })
       .catch((error) => Promise.reject(nombreRepetido(error)));
-    if (count === 0) throw notFound("Seccion no encontrada");
+    if (count === 0) throw notFound("Sección no encontrada");
 
     const seccion = await prisma.seccion.findUniqueOrThrow({ where: { id: req.params.id }, select: seleccion });
     res.json({ seccion });

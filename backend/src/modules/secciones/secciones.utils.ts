@@ -12,6 +12,6 @@ export const crearSeccionesPorDefecto = (tx: Prisma.TransactionClient, grupoId: 
 export const comprobarSeccionesDelGrupo = async (grupoId: string, seccionIds: string[]) => {
   const unicas = [...new Set(seccionIds)];
   const validas = await prisma.seccion.count({ where: { grupoId, archivada: false, id: { in: unicas } } });
-  if (validas !== unicas.length) throw badRequest("Alguna seccion no existe en este grupo", { seccionIds: "Seccion no valida" });
+  if (validas !== unicas.length) throw badRequest("Alguna sección no existe en este grupo", { seccionIds: "Sección no válida" });
   return unicas;
 };

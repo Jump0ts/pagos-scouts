@@ -59,7 +59,7 @@ export const invitacionVigente = async (token: string) => {
     include: { grupo: { select: { nombre: true } }, secciones: { select: { seccionId: true } } },
   });
   if (!invitacion || invitacion.usadaEn || invitacion.expiraEn <= new Date()) {
-    throw notFound("Esta invitacion no existe o ha caducado");
+    throw notFound("Esta invitación no existe o ha caducado");
   }
   return invitacion;
 };

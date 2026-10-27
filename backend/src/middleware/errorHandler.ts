@@ -12,7 +12,7 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   }
   // JSON mal formado en el cuerpo de la peticion.
   if (err instanceof SyntaxError && "status" in err && err.status === 400) {
-    res.status(400).json({ error: "El cuerpo de la peticion no es JSON valido" });
+    res.status(400).json({ error: "El cuerpo de la petición no es JSON válido" });
     return;
   }
   // Cualquier otro error es un fallo nuestro: se registra, pero al cliente no se le dan detalles.

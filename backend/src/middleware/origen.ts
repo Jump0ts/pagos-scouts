@@ -15,7 +15,7 @@ export const mismoOrigen: RequestHandler = (req, _res, next) => {
   try {
     hostOrigen = new URL(origen).host;
   } catch {
-    return next(forbidden("Origen no valido"));
+    return next(forbidden("Origen no válido"));
   }
   return hostOrigen === req.get("host") ? next() : next(forbidden("Origen no permitido"));
 };

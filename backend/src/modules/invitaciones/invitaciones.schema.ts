@@ -10,11 +10,11 @@ export const crearInvitacionSchema = z
   })
   .refine((datos) => datos.rol !== "SCOUTER" || datos.seccionIds.length > 0, {
     path: ["seccionIds"],
-    message: "Un scouter necesita al menos una seccion",
+    message: "Un scouter necesita al menos una sección",
   });
 
 // Si el email ya tiene cuenta, basta con su contrasena actual; si no, nombre y contrasena nueva.
 export const aceptarInvitacionSchema = z.object({
   nombre: nombreSchema.optional(),
-  contrasena: z.string({ required_error: "Escribe una contrasena" }).min(1, "Escribe una contrasena").max(128),
+  contrasena: z.string({ required_error: "Escribe una contraseña" }).min(1, "Escribe una contraseña").max(128),
 });

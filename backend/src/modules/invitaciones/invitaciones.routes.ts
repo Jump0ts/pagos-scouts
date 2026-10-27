@@ -40,7 +40,7 @@ invitacionesRouter.post(
       comprobarBloqueo(invitacion.email);
       if (!(await verificarContrasena(existente.hashContrasena, contrasena))) {
         registrarFallo(invitacion.email);
-        throw unauthorized("La contrasena no es correcta");
+        throw unauthorized("La contraseña no es correcta");
       }
       registrarExito(invitacion.email);
     } else {
@@ -55,7 +55,7 @@ invitacionesRouter.post(
         where: { id: invitacion.id, usadaEn: null },
         data: { usadaEn: new Date() },
       });
-      if (count === 0) throw conflict("Esta invitacion ya se ha usado");
+      if (count === 0) throw conflict("Esta invitación ya se ha usado");
       const id = existente
         ? existente.id
         : (await tx.usuario.create({ data: { email: invitacion.email, ...nuevo! } })).id;

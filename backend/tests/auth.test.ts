@@ -48,7 +48,7 @@ describe("login", () => {
   it("valida los campos con mensajes claros", async () => {
     const res = await login("no-es-un-email", "").expect(400);
 
-    expect(res.body.campos).toEqual({ email: "No es un email valido", contrasena: "Escribe tu contrasena" });
+    expect(res.body.campos).toEqual({ email: "No es un email válido", contrasena: "Escribe tu contraseña" });
   });
 });
 
@@ -72,6 +72,24 @@ describe("sesion", () => {
 
     await admin.get("/api/auth/yo").expect(401);
     expect(await prisma.sesion.count()).toBe(0);
+  });
+});
+
+describe("cambiar la contrasena", () => {
+  it("exige la actual, cambia la contrasena y cierra las demas sesiones, no esta", async () => {
+    const { admin } = await grupoConAdmin();
+    const otroDispositivo = request.agent(app);
+    await otroDispositivo.post("/api/auth/login").send({ email: "admin@pinar.test", contrasena: CONTRASENA }).expect(200);
+
+    const mal = await admin.put("/api/auth/contrasena").send({ actual: "no-es-esta", nueva: "la-nueva-contrasena" });
+    expect(mal.status).toBe(400);
+    expect(mal.body.campos.actual).toBe("La contraseña actual no es correcta");
+
+    await admin.put("/api/auth/contrasena").send({ actual: CONTRASENA, nueva: "la-nueva-contrasena" }).expect(204);
+
+    await admin.get("/api/auth/yo").expect(200);
+    await otroDispositivo.get("/api/auth/yo").expect(401);
+    await login("admin@pinar.test", "la-nueva-contrasena").expect(200);
   });
 });
 

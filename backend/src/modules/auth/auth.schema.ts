@@ -5,13 +5,13 @@ export const emailSchema = z
   .trim()
   .toLowerCase()
   .max(254, "El email es demasiado largo")
-  .email("No es un email valido");
+  .email("No es un email válido");
 
 // D-14: contrasenas largas antes que complicadas.
 export const contrasenaNuevaSchema = z
-  .string({ required_error: "Escribe una contrasena" })
-  .min(10, "La contrasena debe tener al menos 10 caracteres")
-  .max(128, "La contrasena no puede tener mas de 128 caracteres");
+  .string({ required_error: "Escribe una contraseña" })
+  .min(10, "La contraseña debe tener al menos 10 caracteres")
+  .max(128, "La contraseña no puede tener más de 128 caracteres");
 
 export const nombreSchema = z
   .string({ required_error: "Escribe tu nombre" })
@@ -21,7 +21,12 @@ export const nombreSchema = z
 
 export const loginSchema = z.object({
   email: emailSchema,
-  contrasena: z.string({ required_error: "Escribe tu contrasena" }).min(1, "Escribe tu contrasena").max(128),
+  contrasena: z.string({ required_error: "Escribe tu contraseña" }).min(1, "Escribe tu contraseña").max(128),
+});
+
+export const cambiarContrasenaSchema = z.object({
+  actual: z.string({ required_error: "Escribe tu contraseña actual" }).min(1, "Escribe tu contraseña actual").max(128),
+  nueva: contrasenaNuevaSchema,
 });
 
 export const grupoActivoSchema = z.object({

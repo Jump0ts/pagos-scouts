@@ -8,5 +8,5 @@ export const editarMiembroSchema = z
   })
   .refine((datos) => datos.rol !== "SCOUTER" || datos.seccionIds.length > 0, {
     path: ["seccionIds"],
-    message: "Un scouter necesita al menos una seccion",
+    message: "Un scouter necesita al menos una sección",
   });

@@ -15,7 +15,7 @@ export const usuariosRouter = Router();
 // La membresia se busca siempre junto con el grupo activo: la de otro grupo es, a todos los efectos, inexistente.
 const membresiaDelGrupo = async (membresiaId: string, grupoId: string) => {
   const membresia = await prisma.membresia.findFirst({ where: { id: membresiaId, grupoId } });
-  if (!membresia) throw notFound("Esa persona no esta en el grupo");
+  if (!membresia) throw notFound("Esa persona no está en el grupo");
   return membresia;
 };
 
@@ -81,7 +81,7 @@ usuariosRouter.delete(
     const { count } = await prisma.invitacion.deleteMany({
       where: { id: req.params.id, grupoId: req.grupo!.id, usadaEn: null },
     });
-    if (count === 0) throw notFound("Invitacion no encontrada");
+    if (count === 0) throw notFound("Invitación no encontrada");
     res.status(204).end();
   }),
 );

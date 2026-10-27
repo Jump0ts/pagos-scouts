@@ -57,7 +57,7 @@ describe("abrir y aceptar una invitacion", () => {
     await prisma.invitacion.updateMany({ data: { expiraEn: new Date(Date.now() - 1000) } });
 
     const res = await request(app).get(`/api/invitaciones/${tokenDe(enlace)}`).expect(404);
-    expect(res.body.error).toBe("Esta invitacion no existe o ha caducado");
+    expect(res.body.error).toBe("Esta invitación no existe o ha caducado");
   });
 
   it("exige una contrasena de al menos 10 caracteres y un nombre a quien no tiene cuenta", async () => {
@@ -99,7 +99,7 @@ describe("invitar desde la web", () => {
       .send({ email: "s@pinar.test", rol: "SCOUTER", seccionIds: [seccionDelRio] });
 
     expect(sinSecciones.status).toBe(400);
-    expect(sinSecciones.body.campos.seccionIds).toBe("Un scouter necesita al menos una seccion");
+    expect(sinSecciones.body.campos.seccionIds).toBe("Un scouter necesita al menos una sección");
     expect(ajena.status).toBe(400);
   });
 
