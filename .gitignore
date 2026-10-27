@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+
+# Datos reales (Excels del banco, listados de educandos, informes): NUNCA al repo, que es publico.
+# Los tests usan solo fixtures inventadas dentro de tests/fixtures/.
+*.xls
+*.xlsx
+*.csv
+!**/tests/fixtures/**
+
+# Env files y secretos: nunca al repo (solo se versionan los *.example)
+.env
+.env.*
+!.env.*.example
+*.pem
+*.key
+*.sql.gz
+
+# Build outputs
+dist/
+build/
+
+# Coverage
+coverage/
+*.lcov
+
+# Logs
+npm-debug.log*
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE y herramientas locales
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.claude/
+.impeccable/
+
+# Maquetas de la decision D-7: referencia visual local, no forman parte de la app
+maquetas/
+
+# Prototipo en Python
+__pycache__/
+.deps/
+
+# TypeScript
+*.tsbuildinfo
