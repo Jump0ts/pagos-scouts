@@ -11,16 +11,22 @@ export class ApiError extends Error {
   }
 }
 
-type Opciones = { metodo?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"; cuerpo?: unknown };
+type Opciones = {
+  metodo?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+  cuerpo?: unknown;
+  // Un fichero que se manda tal cual (por ejemplo, el Excel del listado).
+  archivo?: Blob;
+};
 
-export const api = async <T>(ruta: string, { metodo = "GET", cuerpo }: Opciones = {}): Promise<T> => {
+export const api = async <T>(ruta: string, { metodo = "GET", cuerpo, archivo }: Opciones = {}): Promise<T> => {
+  const tipo = archivo ? "application/octet-stream" : cuerpo === undefined ? null : "application/json";
   let res: Response;
   try {
     res = await fetch(`/api${ruta}`, {
       method: metodo,
       credentials: "same-origin",
-      headers: { Accept: "application/json", ...(cuerpo === undefined ? {} : { "Content-Type": "application/json" }) },
-      body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
+      headers: { Accept: "application/json", ...(tipo ? { "Content-Type": tipo } : {}) },
+      body: archivo ?? (cuerpo === undefined ? undefined : JSON.stringify(cuerpo)),
     });
   } catch {
     throw new ApiError(0, "No hay conexión con el servidor. Comprueba tu conexión e inténtalo de nuevo.");

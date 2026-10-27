@@ -29,7 +29,8 @@ export const simularApi = (rutasApi: Record<string, Manejador | Respuesta>) => {
     const clave = `${init?.method ?? "GET"} ${url.replace(/^\/api/, "")}`;
     const definida = rutasApi[clave];
     if (!definida) return new Response(JSON.stringify({ error: `Sin simular: ${clave}` }), { status: 500 });
-    const cuerpo = init?.body ? JSON.parse(init.body as string) : undefined;
+    // Los ficheros (subida del listado) llegan tal cual; solo el JSON se interpreta.
+    const cuerpo = typeof init?.body === "string" ? JSON.parse(init.body) : init?.body;
     const { status = 200, cuerpo: respuesta } = typeof definida === "function" ? definida(cuerpo) : definida;
     return status === 204
       ? new Response(null, { status })

@@ -5,6 +5,8 @@ import { InvitacionPagina } from "./features/auth/InvitacionPagina";
 import { LoginPagina } from "./features/auth/LoginPagina";
 import { RestablecerPagina } from "./features/auth/RestablecerPagina";
 import { RutaProtegida, SoloRol } from "./features/auth/RutaProtegida";
+import { EducandosPagina } from "./features/educandos/EducandosPagina";
+import { ImportarListadoPagina } from "./features/importaciones/ImportarListadoPagina";
 import { InicioPagina } from "./features/inicio/InicioPagina";
 import { SeccionesAjustes } from "./features/secciones/SeccionesAjustes";
 import { PersonasAjustes } from "./features/usuarios/PersonasAjustes";
@@ -24,6 +26,11 @@ export const rutas = [
         element: <AppLayout />,
         children: [
           { index: true, element: <InicioPagina /> },
+          { path: "educandos", element: <EducandosPagina /> },
+          {
+            element: <SoloRol roles={["ADMIN", "TESORERIA"]} />,
+            children: [{ path: "educandos/importar", element: <ImportarListadoPagina /> }],
+          },
           {
             path: "ajustes",
             element: <AjustesPagina />,

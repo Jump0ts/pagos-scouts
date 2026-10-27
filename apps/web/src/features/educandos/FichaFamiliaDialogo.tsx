@@ -1,0 +1,240 @@
+import * as Menu from "@radix-ui/react-dropdown-menu";
+import { Ellipsis, Pencil, Plus, RotateCcw, Split, Trash2, UserMinus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Aviso } from "@/components/Aviso";
+import { Boton } from "@/components/Boton";
+import { Cargando } from "@/components/Cargando";
+import { Confirmar } from "@/components/Confirmar";
+import { Dialogo } from "@/components/Dialogo";
+import { usePerfil } from "@/features/auth/useSesion";
+import { ChipSeccion } from "@/features/secciones/ChipSeccion";
+import { useSecciones } from "@/features/secciones/secciones.api";
+import { mensajeDeError } from "@/utils/api";
+import { EducandoDialogo } from "./EducandoDialogo";
+import {
+  useBorrarEducando, useBorrarFamilia, useCambiarBaja, useEditarEducando, useEditarFamilia, useFichaFamilia,
+} from "./educandos.api";
+import type { HijoEnFicha } from "./educandos.types";
+import { ResponsablesCampos } from "./ResponsablesCampos";
+
+const claseItem = "flex cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm outline-none data-[highlighted]:bg-hundido";
+
+type Pendiente =
+  | { tipo: "borrar-hijo"; hijo: HijoEnFicha }
+  | { tipo: "separar"; hijo: HijoEnFicha }
+  | { tipo: "borrar-familia" }
+  | null;
+
+export const FichaFamiliaDialogo = ({ familiaId, onCerrar }: { familiaId: string | null; onCerrar: () => void }) => {
+  const { grupoActivo } = usePerfil();
+  const esAdmin = grupoActivo?.rol === "ADMIN";
+  const { data: familia, isPending, error } = useFichaFamilia(familiaId);
+  const { data: secciones = [] } = useSecciones();
+  const editarFamilia = useEditarFamilia();
+  const baja = useCambiarBaja();
+  const borrarHijo = useBorrarEducando();
+  const borrarFamilia = useBorrarFamilia();
+  const moverHijo = useEditarEducando();
+
+  const [editando, setEditando] = useState(false);
+  const [responsables, setResponsables] = useState<string[]>([]);
+  const [nombre, setNombre] = useState("");
+  const [hijoEditado, setHijoEditado] = useState<HijoEnFicha | null>(null);
+  const [anadiendoHermano, setAnadiendoHermano] = useState(false);
+  const [pendiente, setPendiente] = useState<Pendiente>(null);
+
+  useEffect(() => {
+    setEditando(false);
+    setPendiente(null);
+  }, [familiaId]);
+
+  const empezarEdicion = () => {
+    if (!familia) return;
+    setNombre(familia.nombre);
+    setResponsables(familia.responsables.map((r) => r.nombreCompleto));
+    setEditando(true);
+  };
+
+  const guardarEdicion = async () => {
+    if (!familia) return;
+    await editarFamilia.mutateAsync({
+      id: familia.id,
+      nombre: nombre.trim(),
+      responsables: responsables.map((r) => r.trim()).filter(Boolean),
+    });
+    setEditando(false);
+  };
+
+  const seccion = (id: string | null) => secciones.find((s) => s.id === id);
+  const ultimoHijo = (familia?.educandos.length ?? 0) <= 1;
+
+  return (
+    <>
+      <Dialogo
+        abierto={familiaId !== null}
+        onCambiar={(v) => !v && onCerrar()}
+        titulo={familia?.nombre ?? "Familia"}
+        descripcion={familia ? `${familia.educandos.length} ${familia.educandos.length === 1 ? "hijo" : "hijos"} en el grupo` : undefined}
+      >
+        {isPending ? (
+          <Cargando />
+        ) : error || !familia ? (
+          <Aviso tono="error">{mensajeDeError(error)}</Aviso>
+        ) : (
+          <div className="flex flex-col gap-6">
+            <section aria-labelledby="ficha-responsables" className="flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-3">
+                <h3 id="ficha-responsables" className="text-xs font-bold tracking-[.12em] text-suave uppercase">Responsables</h3>
+                {!editando && (
+                  <Boton variante="fantasma" tamano="pequeno" onClick={empezarEdicion}>
+                    <Pencil className="size-4" aria-hidden /> Editar
+                  </Boton>
+                )}
+              </div>
+              {editando ? (
+                <div className="flex flex-col gap-4 rounded-2xl bg-hundido p-4">
+                  <label className="flex flex-col gap-1.5">
+                    <span className="text-sm font-semibold">Nombre de la familia</span>
+                    <input
+                      value={nombre}
+                      onChange={(e) => setNombre(e.target.value)}
+                      className="h-12 rounded-2xl bg-superficie px-4 text-base ring-1 ring-linea focus:outline-none focus:ring-2 focus:ring-bosque"
+                    />
+                  </label>
+                  <ResponsablesCampos valor={responsables} onCambiar={setResponsables} />
+                  {editarFamilia.error && <Aviso tono="error">{mensajeDeError(editarFamilia.error)}</Aviso>}
+                  <div className="flex justify-end gap-2">
+                    <Boton variante="secundario" tamano="pequeno" onClick={() => setEditando(false)}>Cancelar</Boton>
+                    <Boton tamano="pequeno" cargando={editarFamilia.isPending} onClick={guardarEdicion}>Guardar</Boton>
+                  </div>
+                </div>
+              ) : familia.responsables.length ? (
+                <ul className="flex flex-col gap-1">
+                  {familia.responsables.map((r) => (
+                    <li key={r.id} className="font-semibold">{r.nombreCompleto}</li>
+                  ))}
+                </ul>
+              ) : (
+                <Aviso tono="info">
+                  Sin responsables apuntados: sus pagos no se podrán reconocer por el nombre de quien paga.
+                </Aviso>
+              )}
+            </section>
+
+            <section aria-labelledby="ficha-hijos" className="flex flex-col gap-3">
+              <h3 id="ficha-hijos" className="text-xs font-bold tracking-[.12em] text-suave uppercase">Hijos en el grupo</h3>
+              <ul className="divide-y divide-linea overflow-hidden rounded-2xl ring-1 ring-linea">
+                {familia.educandos.map((hijo) => {
+                  const suya = seccion(hijo.seccionId);
+                  return (
+                    <li key={hijo.id} className="flex items-center gap-3 py-2.5 pr-1.5 pl-4">
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-semibold">{hijo.nombre} {hijo.apellidos}</span>
+                        <span className="mt-1 flex flex-wrap items-center gap-1.5">
+                          {suya ? <ChipSeccion seccion={suya} /> : <span className="text-xs text-suave">Sin sección este curso</span>}
+                          {hijo.deBaja && <span className="rounded-full bg-rojo-claro px-2 py-0.5 text-xs font-semibold text-rojo">De baja</span>}
+                        </span>
+                      </span>
+                      <Menu.Root>
+                        <Menu.Trigger
+                          aria-label={`Acciones para ${hijo.nombre}`}
+                          className="grid size-10 shrink-0 place-items-center rounded-full text-suave hover:bg-hundido hover:text-tinta"
+                        >
+                          <Ellipsis className="size-5" aria-hidden />
+                        </Menu.Trigger>
+                        <Menu.Portal>
+                          <Menu.Content align="end" sideOffset={6} className="z-[60] min-w-60 rounded-2xl bg-superficie p-1.5 shadow-xl ring-1 ring-linea">
+                            <Menu.Item className={claseItem} onSelect={() => setHijoEditado(hijo)}>
+                              <Pencil className="size-4 text-suave" aria-hidden /> Editar datos y sección
+                            </Menu.Item>
+                            <Menu.Item className={claseItem} onSelect={() => baja.mutate({ id: hijo.id, baja: !hijo.deBaja })}>
+                              {hijo.deBaja ? <RotateCcw className="size-4 text-suave" aria-hidden /> : <UserMinus className="size-4 text-suave" aria-hidden />}
+                              {hijo.deBaja ? "Reincorporar este curso" : "Dar de baja este curso"}
+                            </Menu.Item>
+                            {!ultimoHijo && (
+                              <Menu.Item className={claseItem} onSelect={() => setPendiente({ tipo: "separar", hijo })}>
+                                <Split className="size-4 text-suave" aria-hidden /> No es de esta familia
+                              </Menu.Item>
+                            )}
+                            {esAdmin && (
+                              <>
+                                <Menu.Separator className="my-1 h-px bg-linea" />
+                                <Menu.Item className={`${claseItem} text-rojo`} onSelect={() => setPendiente({ tipo: "borrar-hijo", hijo })}>
+                                  <Trash2 className="size-4" aria-hidden /> Borrar definitivamente
+                                </Menu.Item>
+                              </>
+                            )}
+                          </Menu.Content>
+                        </Menu.Portal>
+                      </Menu.Root>
+                    </li>
+                  );
+                })}
+              </ul>
+              {baja.error && <Aviso tono="error">{mensajeDeError(baja.error)}</Aviso>}
+              <Boton variante="secundario" tamano="pequeno" className="w-fit" onClick={() => setAnadiendoHermano(true)}>
+                <Plus className="size-4" aria-hidden /> Añadir hermano o hermana
+              </Boton>
+            </section>
+
+            {esAdmin && (
+              <div className="border-t border-linea pt-4">
+                <Boton variante="fantasma" tamano="pequeno" className="text-rojo" onClick={() => setPendiente({ tipo: "borrar-familia" })}>
+                  <Trash2 className="size-4" aria-hidden /> Borrar la familia y sus hijos
+                </Boton>
+              </div>
+            )}
+          </div>
+        )}
+      </Dialogo>
+
+      {familia && (
+        <>
+          <EducandoDialogo
+            abierto={hijoEditado !== null}
+            onCambiar={(v) => !v && setHijoEditado(null)}
+            educando={hijoEditado ?? undefined}
+          />
+          <EducandoDialogo abierto={anadiendoHermano} onCambiar={setAnadiendoHermano} familiaId={familia.id} />
+        </>
+      )}
+
+      <Confirmar
+        abierto={pendiente?.tipo === "separar"}
+        onCambiar={(v) => !v && setPendiente(null)}
+        titulo={pendiente?.tipo === "separar" ? `¿Sacar a ${pendiente.hijo.nombre} de esta familia?` : ""}
+        descripcion="Pasará a una familia nueva, sin responsables. Después podrás apuntar a sus padres desde su ficha."
+        accion="Sacar de la familia"
+        onConfirmar={async () => {
+          if (pendiente?.tipo === "separar") await moverHijo.mutateAsync({ id: pendiente.hijo.id, familia: { nueva: { responsables: [] } } });
+        }}
+      />
+      <Confirmar
+        abierto={pendiente?.tipo === "borrar-hijo"}
+        onCambiar={(v) => !v && setPendiente(null)}
+        titulo={pendiente?.tipo === "borrar-hijo" ? `¿Borrar a ${pendiente.hijo.nombre} definitivamente?` : ""}
+        descripcion={`Se borran todos sus datos y no se puede deshacer. Si solo deja el grupo, mejor dale de baja.${ultimoHijo ? " Es el último hijo: la familia también se borrará." : ""}`}
+        accion="Borrar"
+        peligrosa
+        onConfirmar={async () => {
+          if (pendiente?.tipo !== "borrar-hijo") return;
+          await borrarHijo.mutateAsync(pendiente.hijo.id);
+          if (ultimoHijo) onCerrar();
+        }}
+      />
+      <Confirmar
+        abierto={pendiente?.tipo === "borrar-familia"}
+        onCambiar={(v) => !v && setPendiente(null)}
+        titulo={`¿Borrar ${familia?.nombre ?? "la familia"}?`}
+        descripcion="Se borran la familia, sus responsables y todos sus hijos. No se puede deshacer."
+        accion="Borrar todo"
+        peligrosa
+        onConfirmar={async () => {
+          if (!familia) return;
+          await borrarFamilia.mutateAsync(familia.id);
+          onCerrar();
+        }}
+      />
+    </>
+  );
+};

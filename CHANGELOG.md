@@ -31,6 +31,17 @@ still change.
   TanStack Query, React Hook Form + Zod and Radix primitives styled with the project theme.
 - Users can change their own password (current password required; other sessions are closed).
 
+- **Part 2 — children, families and school years.** School years (one active per group), families with their
+  guardians (full name only), children (name, surnames, optional birth date) and their section per year. Add,
+  edit, change section or family, reversible "leaves this year" and admin-only permanent deletion. A Children
+  screen with search (accent-insensitive), section filters and grouped list; a family sheet with guardians and
+  siblings across sections. Scouters only see the children of their sections and cannot open family sheets.
+- **Import of the group roster** in a 3-step wizard: upload (the file is read in memory and never stored),
+  assign a section to each block and pick the school year, review the proposed families (siblings across
+  blocks, typo-merged families, children without guardians, already existing children) and confirm all at once.
+  Re-importing recognises existing children and families and only updates their section. CSV files are read in
+  UTF-8 or Windows-1252.
+
 ### Fixed
 - User-facing API messages now use proper Spanish spelling (contraseña, sesión, sección…).
 - The development proxy keeps the `Host` header, so the CSRF origin check behaves as it does behind nginx.
