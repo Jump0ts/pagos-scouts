@@ -16,10 +16,26 @@ export type ListadoLeido = {
   columnasIgnoradas: string[];
 };
 
+const esExcel = (b: Buffer) =>
+  b.subarray(0, 4).equals(Buffer.from([0x50, 0x4b, 0x03, 0x04])) || // .xlsx (zip)
+  b.subarray(0, 4).equals(Buffer.from([0xd0, 0xcf, 0x11, 0xe0])); // .xls antiguo
+
+// Un CSV puede venir en UTF-8 (con o sin BOM; TextDecoder ya quita el BOM) o en Windows-1252, la codificacion de
+// Excel en español.
+const textoDeCsv = (b: Buffer) => {
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(b);
+  } catch {
+    return new TextDecoder("windows-1252").decode(b);
+  }
+};
+
 // Primera hoja del Excel (o CSV) como filas de texto.
 export const leerFilas = (contenido: Buffer): string[][] => {
   try {
-    const libro = XLSX.read(contenido, { type: "buffer", dense: true });
+    const libro = esExcel(contenido)
+      ? XLSX.read(contenido, { type: "buffer", dense: true })
+      : XLSX.read(textoDeCsv(contenido), { type: "string", dense: true });
     const hoja = libro.Sheets[libro.SheetNames[0]];
     if (!hoja) throw new Error("sin hojas");
     return XLSX.utils

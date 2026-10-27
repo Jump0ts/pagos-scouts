@@ -56,6 +56,14 @@ describe("lectura del listado", () => {
     expect(leido.columnasIgnoradas).toEqual(["Pago del censo", "Pago cuota"]);
   });
 
+  it.each([
+    ["UTF-8 sin BOM", Buffer.from("Padres,Educando\nRosa Castillo Rojo,Leo Díaz Castillo\n", "utf8")],
+    ["UTF-8 con BOM", Buffer.from("﻿Padres,Educando\nRosa Castillo Rojo,Leo Díaz Castillo\n", "utf8")],
+    ["Windows-1252", Buffer.from("Padres,Educando\nRosa Castillo Rojo,Leo Díaz Castillo\n", "latin1")],
+  ])("lee las tildes de un CSV en %s", (_, contenido) => {
+    expect(interpretarListado(leerFilas(contenido)).filas[0].nino).toBe("Leo Díaz Castillo");
+  });
+
   it("sin cabecera usa las columnas A y B", () => {
     const leido = interpretarListado([["Carmen Vidal Ortega", "Irene Navas Vidal"]]);
     expect(leido.filas).toEqual([{ fila: 1, bloque: 0, nino: "Irene Navas Vidal", responsables: ["Carmen Vidal Ortega"] }]);

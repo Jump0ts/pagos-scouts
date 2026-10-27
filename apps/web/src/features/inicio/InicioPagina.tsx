@@ -1,4 +1,4 @@
-import { CalendarDays, Inbox, Users } from "lucide-react";
+import { CalendarDays, Inbox } from "lucide-react";
 import { ETIQUETA_ROL } from "@/features/auth/auth.constants";
 import { usePerfil } from "@/features/auth/useSesion";
 import { EstadoSistema } from "@/features/health/EstadoSistema";
@@ -6,7 +6,6 @@ import { EstadoSistema } from "@/features/health/EstadoSistema";
 const PROXIMAMENTE = [
   { icono: Inbox, titulo: "Dudas", texto: "Los pagos que necesitan tu decisión." },
   { icono: CalendarDays, titulo: "Eventos", texto: "Cuotas y actividades, y quién ha pagado." },
-  { icono: Users, titulo: "Educandos", texto: "Niños, familias y secciones." },
 ];
 
 export const InicioPagina = () => {
@@ -27,7 +26,7 @@ export const InicioPagina = () => {
       <section aria-labelledby="proximamente" className="rounded-3xl bg-superficie p-5 ring-1 ring-linea md:p-6">
         <h2 id="proximamente" className="font-display text-xl font-bold">Lo que viene</h2>
         <p className="text-sm text-suave">Estas pantallas llegan en las siguientes partes.</p>
-        <ul className="mt-4 grid gap-3 sm:grid-cols-3">
+        <ul className="mt-4 grid gap-3 sm:grid-cols-2">
           {PROXIMAMENTE.map(({ icono: Icono, titulo, texto }) => (
             <li key={titulo} className="flex gap-3 rounded-2xl bg-hundido p-4">
               <Icono className="mt-0.5 size-5 shrink-0 text-bosque" aria-hidden />

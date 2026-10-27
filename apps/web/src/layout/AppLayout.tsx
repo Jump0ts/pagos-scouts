@@ -1,14 +1,15 @@
 import * as Menu from "@radix-ui/react-dropdown-menu";
-import { House, LogOut, Settings, Tent, UserRound } from "lucide-react";
+import { House, LogOut, Settings, Tent, UserRound, Users } from "lucide-react";
 import { Link, NavLink, Outlet } from "react-router";
 import { useCerrarSesion, usePerfil } from "@/features/auth/useSesion";
 import { SelectorGrupo } from "@/features/grupos/SelectorGrupo";
 import { SinGrupo } from "@/features/grupos/SinGrupo";
 import { cx } from "@/utils/cx";
 
-// Las entradas de Dudas, Eventos y Educandos se añaden cuando llegan sus partes.
+// Las entradas de Dudas y Eventos se añaden cuando llegan sus partes.
 const NAVEGACION = [
   { a: "/", texto: "Inicio", icono: House, fin: true },
+  { a: "/educandos", texto: "Educandos", icono: Users, fin: false },
   { a: "/ajustes", texto: "Ajustes", icono: Settings, fin: false },
 ];
 
