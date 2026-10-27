@@ -25,6 +25,9 @@ model Grupo {
   secciones    Seccion[]
   membresias   Membresia[]
   invitaciones Invitacion[]
+  cursos       Curso[]
+  familias     Familia[]
+  educandos    Educando[]
 }
 
 // D-3: secciones por defecto, renombrables, ordenables y archivables por grupo.
@@ -42,9 +45,86 @@ model Seccion {
 
   scouters     MembresiaSeccion[]
   invitaciones InvitacionSeccion[]
+  matriculas   Matricula[]
 
   @@unique([grupoId, nombre])
   @@index([grupoId])
+}
+
+// D-2: los niños cambian de sección cada curso; eventos y deudas pertenecen a un curso. Un curso activo por grupo.
+model Curso {
+  id       String   @id @default(cuid())
+  grupoId  String
+  grupo    Grupo    @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  // "2026-27"
+  nombre   String
+  activo   Boolean  @default(false)
+  creadoEn DateTime @default(now())
+
+  matriculas Matricula[]
+
+  @@unique([grupoId, nombre])
+  @@index([grupoId])
+}
+
+// D-1: la familia agrupa a los hermanos (estén en la sección que estén) y es a quien se ligan los pagadores.
+model Familia {
+  id       String   @id @default(cuid())
+  grupoId  String
+  grupo    Grupo    @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  // "Familia Gil Ferrer": se propone a partir de los apellidos de los hijos y se puede cambiar.
+  nombre   String
+  creadoEn DateTime @default(now())
+
+  responsables Responsable[]
+  educandos    Educando[]
+
+  @@index([grupoId])
+}
+
+// D-27: de los padres o tutores solo se guarda el nombre completo (lo que se busca en el Excel del banco).
+model Responsable {
+  id             String  @id @default(cuid())
+  familiaId      String
+  familia        Familia @relation(fields: [familiaId], references: [id], onDelete: Cascade)
+  nombreCompleto String
+  orden          Int     @default(0)
+
+  @@index([familiaId])
+}
+
+// D-26: solo nombre, apellidos y, opcionalmente, la fecha de nacimiento (para el precio de 2º hermano).
+model Educando {
+  id              String    @id @default(cuid())
+  grupoId         String
+  grupo           Grupo     @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  familiaId       String
+  familia         Familia   @relation(fields: [familiaId], references: [id], onDelete: Cascade)
+  nombre          String
+  apellidos       String    @default("")
+  fechaNacimiento DateTime? @db.Date
+  creadoEn        DateTime  @default(now())
+
+  matriculas Matricula[]
+
+  @@index([grupoId])
+  @@index([familiaId])
+}
+
+// La sección de un niño en un curso. bajaEn marca que dejó el grupo ese curso (D-30): se conserva el historial.
+model Matricula {
+  id         String    @id @default(cuid())
+  educandoId String
+  educando   Educando  @relation(fields: [educandoId], references: [id], onDelete: Cascade)
+  cursoId    String
+  curso      Curso     @relation(fields: [cursoId], references: [id], onDelete: Cascade)
+  seccionId  String
+  seccion    Seccion   @relation(fields: [seccionId], references: [id], onDelete: Restrict)
+  bajaEn     DateTime?
+  creadoEn   DateTime  @default(now())
+
+  @@unique([educandoId, cursoId])
+  @@index([cursoId])
 }
 
 model Usuario {

@@ -56,6 +56,19 @@ No se borra la antigua.
 | D-24 | **Ajustes con pestañas** | Una entrada "Ajustes" en la navegación con pestañas Personas · Secciones · Mi cuenta. Quien no es administrador solo ve "Mi cuenta". |
 | D-25 | **Enlaces con Copiar y Compartir** | Las invitaciones y los enlaces de restablecer se muestran con un botón "Copiar" y, donde el navegador lo permite (móvil), "Compartir", que abre el menú del sistema con un mensaje ya escrito. La app nunca envía nada por su cuenta. |
 
+## Bloque 5 — Parte 2: educandos, familias y cursos (2026-10-27)
+
+| # | Decisión | Detalle |
+|---|---|---|
+| D-26 | **Del educando, solo nombre, apellidos y nacimiento** | La fecha de nacimiento es opcional y solo sirve para el 2º hermano (D-4b). Nada de DNI, salud, dirección, fotos ni observaciones libres. |
+| D-27 | **De los responsables, solo el nombre completo** | Es lo que necesita el motor para reconocer al pagador en el Excel del banco. Sin teléfonos ni emails. |
+| D-28 | **Importación del listado en un asistente de 3 pasos** | 1) Subir el Excel y detectar los bloques (cada cabecera repetida es un bloque). 2) Elegir la sección de cada bloque y el curso. 3) Revisar las familias detectadas (uniones por erratas, niños sin responsables, coincidencias con lo que ya existe). Nada se guarda hasta confirmar. |
+| D-29 | **Reimportar reconoce y actualiza** | Los niños y familias que ya existen se reconocen por nombre (tolerando erratas) y solo se actualiza su sección en el curso elegido. En la revisión se muestran los nuevos, los que cambian y los que no aparecen (posibles bajas), sin darlos de baja solos. |
+| D-30 | **Baja y borrado controlado** | "Dar de baja" saca al niño del curso y conserva su historial. Un administrador puede borrar definitivamente a un niño o a una familia, salvo que tenga pagos registrados. El plazo de conservación automático se decidirá cuando existan los pagos. |
+| D-31 | **El asistente de paso de curso, más adelante** | En la parte 2 se crea el curso al importar y se puede cambiar a un niño de sección a mano. El asistente (D-2) llega en una parte posterior, antes de septiembre de 2027. |
+| D-32 | **Pantalla Educandos: lista por secciones y ficha de familia** | Buscador y filtros por sección; al tocar un niño se abre la ficha de su familia (hermanos, responsables y, más adelante, pagadores y pagos). Un scouter solo ve los niños de sus secciones y no abre fichas de familia. |
+| D-33 | **Las columnas de pagos del Excel se ignoran por ahora** | Cuando existan los eventos (parte 3) se podrán leer como pagos ya hechos. |
+
 **Nota sobre ramas:** la parte 1 sale de `pre` y no de `develop`, porque necesita el esqueleto de la parte 0, que aún
 no ha llegado a `develop` (solo llega al cerrar la release).
 
