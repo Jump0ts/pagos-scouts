@@ -3,11 +3,12 @@ import { Router, type Request } from "express";
 import { requiereRol } from "../../middleware/auth.js";
 import { prisma } from "../../prisma.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
-import { badRequest, notFound } from "../../utils/errors.js";
+import { badRequest, conflict, notFound } from "../../utils/errors.js";
 import { validar } from "../../utils/validar.js";
 import { cursoActivo } from "../cursos/cursos.utils.js";
 import { comprobarSeccionesDelGrupo } from "../secciones/secciones.utils.js";
 import { sincronizarCargos } from "./cargos.sincronizar.js";
+import { estadoDe, importeDe as importe, pagadoPorCargo } from "./cargos.utils.js";
 import { ajustarCargoSchema, anadirNinosSchema, crearEventoSchema, editarEventoSchema } from "./eventos.schema.js";
 
 export const eventosRouter = Router();
@@ -15,12 +16,6 @@ const gestion = requiereRol("ADMIN", "TESORERIA");
 
 const aFecha = (f: string) => new Date(`${f}T00:00:00.000Z`);
 const aTexto = (f: Date) => f.toISOString().slice(0, 10);
-const importe = (c: Pick<Cargo, "importeAjustadoCentimos" | "importeCalculadoCentimos">) =>
-  c.importeAjustadoCentimos ?? c.importeCalculadoCentimos;
-
-// Hasta que existan los pagos (parte 4), lo pagado es 0: un cargo esta pendiente o, si es de 0 €, exento.
-const estadoDe = (debido: number, pagado: number) =>
-  debido === 0 ? "EXENTO" : pagado >= debido ? "PAGADO" : pagado > 0 ? "PARCIAL" : "PENDIENTE";
 
 // D-38: un scouter solo ve lo de sus secciones.
 const seccionesVisibles = (req: Request) => (req.grupo!.rol === "SCOUTER" ? new Set(req.grupo!.seccionIds) : null);
@@ -31,16 +26,20 @@ const eventoDelGrupo = async (id: string, grupoId: string) => {
   return evento;
 };
 
-const resumenDe = (cargos: Cargo[]) => {
+// Lo cobrado de un cargo nunca cuenta mas que lo que debe (un sobrante es saldo de la familia, D-5c).
+const resumenDe = (cargos: Cargo[], pagados: Map<string, number>) => {
   const activos = cargos.filter((c) => c.estado === "ACTIVO");
-  const debido = activos.reduce((n, c) => n + importe(c), 0);
-  const pagado = 0;
+  const pagado = (c: Cargo) => pagados.get(c.id) ?? 0;
   return {
-    debidoCentimos: debido,
-    pagadoCentimos: pagado,
+    debidoCentimos: activos.reduce((n, c) => n + importe(c), 0),
+    pagadoCentimos: activos.reduce((n, c) => n + Math.min(pagado(c), importe(c)), 0),
     ninos: activos.length,
-    alDia: activos.filter((c) => ["PAGADO", "EXENTO"].includes(estadoDe(importe(c), 0))).length,
+    alDia: activos.filter((c) => ["PAGADO", "EXENTO"].includes(estadoDe(importe(c), pagado(c)))).length,
   };
+};
+
+const sinPagos = async (cargoIds: string[], mensaje: string) => {
+  if ((await pagadoPorCargo(cargoIds)).size) throw conflict(mensaje);
 };
 
 const vistaEvento = (evento: Evento & { precios: PrecioSeccion[] }) => ({
@@ -83,11 +82,12 @@ eventosRouter.get(
       orderBy: [{ fechaFin: "asc" }, { nombre: "asc" }],
       include: { precios: true, cargos: true },
     });
+    const pagados = await pagadoPorCargo(eventos.flatMap((e) => e.cargos.map((c) => c.id)));
     res.json({
       curso: { id: curso.id, nombre: curso.nombre },
       eventos: eventos.map((e) => ({
         ...vistaEvento(e),
-        resumen: resumenDe(visibles ? e.cargos.filter((c) => visibles.has(c.seccionId)) : e.cargos),
+        resumen: resumenDe(visibles ? e.cargos.filter((c) => visibles.has(c.seccionId)) : e.cargos, pagados),
       })),
     });
   }),
@@ -141,9 +141,10 @@ eventosRouter.get(
       include: { educando: { select: { id: true, nombre: true, apellidos: true } } },
     });
     const esScouter = Boolean(visibles);
+    const pagados = await pagadoPorCargo(cargos.map((c) => c.id));
     res.json({
       evento: vistaEvento(evento),
-      resumen: resumenDe(cargos),
+      resumen: resumenDe(cargos, pagados),
       excluidos: cargos.filter((c) => c.estado === "EXCLUIDO").length,
       cargos: cargos
         .filter((c) => c.estado === "ACTIVO")
@@ -157,8 +158,8 @@ eventosRouter.get(
           // D-35: el motivo solo para Admin y Tesoreria.
           ...(esScouter ? {} : { motivoAjuste: c.motivoAjuste }),
           posicionHermano: c.posicionHermano,
-          pagadoCentimos: 0,
-          estado: estadoDe(importe(c), 0),
+          pagadoCentimos: pagados.get(c.id) ?? 0,
+          estado: estadoDe(importe(c), pagados.get(c.id) ?? 0),
         })),
     });
   }),
@@ -201,12 +202,14 @@ eventosRouter.patch(
   }),
 );
 
-// Cuando existan los pagos (parte 4) se impedira borrar un evento con pagos.
+// Un evento con pagos no se borra: antes hay que deshacer esos pagos.
 eventosRouter.delete(
   "/:id",
   requiereRol("ADMIN"),
   asyncHandler(async (req, res) => {
     const evento = await eventoDelGrupo(req.params.id, req.grupo!.id);
+    const cargos = await prisma.cargo.findMany({ where: { eventoId: evento.id }, select: { id: true } });
+    await sinPagos(cargos.map((c) => c.id), "Este evento tiene pagos registrados. Deshazlos en Movimientos antes de borrarlo.");
     await prisma.evento.delete({ where: { id: evento.id } });
     res.status(204).end();
   }),
@@ -249,6 +252,10 @@ eventosRouter.patch(
     const { importeAjustadoCentimos, motivo } = validar(ajustarCargoSchema, req.body);
     const evento = await eventoDelGrupo(req.params.id, req.grupo!.id);
     const cargo = await cargoDelEvento(req.params.cargoId, evento.id);
+    const pagado = (await pagadoPorCargo([cargo.id])).get(cargo.id) ?? 0;
+    if (importeAjustadoCentimos !== null && importeAjustadoCentimos < pagado) {
+      throw badRequest("Revisa los datos enviados", { importeAjustadoCentimos: "No puede ser menos de lo que ya ha pagado" });
+    }
     await prisma.cargo.update({
       where: { id: cargo.id },
       data: {
@@ -268,6 +275,7 @@ eventosRouter.delete(
     const grupoId = req.grupo!.id;
     const evento = await eventoDelGrupo(req.params.id, grupoId);
     const cargo = await cargoDelEvento(req.params.cargoId, evento.id);
+    await sinPagos([cargo.id], "Este niño ya ha pagado algo de este evento. Deshaz ese pago en Movimientos antes de quitarlo.");
     await prisma.$transaction(async (tx) => {
       await tx.cargo.update({ where: { id: cargo.id }, data: { estado: "EXCLUIDO" } });
       await sincronizarCargos(tx, grupoId, evento.id);

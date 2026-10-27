@@ -44,7 +44,7 @@ const confirmar = (agente: request.Agent, propuesta: Propuesta, secciones: Recor
   });
 
 describe("lectura del listado", () => {
-  it("detecta un bloque por cabecera repetida, ignora filas vacias y '?' y las columnas de pagos", () => {
+  it("detecta un bloque por cabecera repetida, ignora filas vacias y '?' y lee las marcas de pago", () => {
     const leido = interpretarListado(leerFilas(excel(LISTADO)));
 
     expect(leido.bloques).toBe(2);
@@ -54,6 +54,12 @@ describe("lectura del listado", () => {
     ]);
     expect(leido.filas[0].responsables).toEqual(["Lucía Ferrer Soto", "Andrés Gil Rubio"]);
     expect(leido.columnasIgnoradas).toEqual(["Pago del censo", "Pago cuota"]);
+    // D-44: las marcas "Pagado", por columna y por niño.
+    expect(leido.columnasPago).toEqual([
+      { clave: "PAGO DEL CENSO", titulo: "Pago del censo", marcas: 1 },
+      { clave: "PAGO CUOTA", titulo: "Pago cuota", marcas: 1 },
+    ]);
+    expect(leido.filas.map((f) => f.pagado)).toEqual([["PAGO DEL CENSO"], [], [], ["PAGO CUOTA"], [], []]);
   });
 
   it.each([
@@ -66,7 +72,7 @@ describe("lectura del listado", () => {
 
   it("sin cabecera usa las columnas A y B", () => {
     const leido = interpretarListado([["Carmen Vidal Ortega", "Irene Navas Vidal"]]);
-    expect(leido.filas).toEqual([{ fila: 1, bloque: 0, nino: "Irene Navas Vidal", responsables: ["Carmen Vidal Ortega"] }]);
+    expect(leido.filas).toEqual([{ fila: 1, bloque: 0, nino: "Irene Navas Vidal", responsables: ["Carmen Vidal Ortega"], pagado: [] }]);
   });
 
   it("rechaza ficheros que no son una hoja de calculo", async () => {

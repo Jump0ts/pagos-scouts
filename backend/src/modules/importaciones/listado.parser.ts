@@ -1,5 +1,5 @@
-import * as XLSX from "xlsx";
 import { badRequest } from "../../utils/errors.js";
+import { leerHoja } from "../../utils/hoja.js";
 import { normalizar, tokens } from "../../utils/nombres.js";
 
 export const MAX_FILAS = 3000;
@@ -7,44 +7,25 @@ export const MAX_FILAS = 3000;
 const CABECERA_RESPONSABLES = /PADRE|MADRE|TUTOR|FAMILIA|RESPONSABLE/;
 const CABECERA_NINO = /NINO|NINA|EDUCANDO|SCOUT|HIJO|CHAVAL|NOMBRE|ALUMNO/;
 
-export type FilaListado = { fila: number; bloque: number; nino: string; responsables: string[] };
+// pagado: claves de las columnas en las que el niño tiene la marca "Pagado" (D-44).
+export type FilaListado = { fila: number; bloque: number; nino: string; responsables: string[]; pagado: string[] };
+
+export type ColumnaPago = { clave: string; titulo: string; marcas: number };
 
 export type ListadoLeido = {
   filas: FilaListado[];
   bloques: number;
-  // Columnas que no son de responsables ni de niños (D-33: las de pagos se ignoran por ahora).
+  // Columnas que no son de responsables ni de niños.
   columnasIgnoradas: string[];
+  // Las que tienen alguna marca "Pagado": se pueden ligar a un evento (D-44).
+  columnasPago: ColumnaPago[];
 };
 
-const esExcel = (b: Buffer) =>
-  b.subarray(0, 4).equals(Buffer.from([0x50, 0x4b, 0x03, 0x04])) || // .xlsx (zip)
-  b.subarray(0, 4).equals(Buffer.from([0xd0, 0xcf, 0x11, 0xe0])); // .xls antiguo
-
-// Un CSV puede venir en UTF-8 (con o sin BOM; TextDecoder ya quita el BOM) o en Windows-1252, la codificacion de
-// Excel en español.
-const textoDeCsv = (b: Buffer) => {
-  try {
-    return new TextDecoder("utf-8", { fatal: true }).decode(b);
-  } catch {
-    return new TextDecoder("windows-1252").decode(b);
-  }
-};
+const esMarcaPagado = (celda: string) => normalizar(celda)[0]?.startsWith("PAGAD") ?? false;
 
 // Primera hoja del Excel (o CSV) como filas de texto.
-export const leerFilas = (contenido: Buffer): string[][] => {
-  try {
-    const libro = esExcel(contenido)
-      ? XLSX.read(contenido, { type: "buffer", dense: true })
-      : XLSX.read(textoDeCsv(contenido), { type: "string", dense: true });
-    const hoja = libro.Sheets[libro.SheetNames[0]];
-    if (!hoja) throw new Error("sin hojas");
-    return XLSX.utils
-      .sheet_to_json<unknown[]>(hoja, { header: 1, raw: false, defval: "", blankrows: false })
-      .map((fila) => fila.map((celda) => String(celda ?? "").trim()));
-  } catch {
-    throw badRequest("No se ha podido leer el fichero. Sube el Excel tal como lo guardas (.xlsx, .xls o .csv).");
-  }
-};
+export const leerFilas = (contenido: Buffer): string[][] =>
+  leerHoja(contenido).map((fila) => fila.map((celda) => String(celda ?? "").trim()));
 
 /**
  * Formato de los listados de los grupos: una columna con los responsables separados por "/" y otra con el niño.
@@ -60,6 +41,9 @@ export const interpretarListado = (filas: string[][]): ListadoLeido => {
   let ninosEnBloque = 0;
   // Por nombre normalizado: "Pago Cuota" y "Pago cuota " son la misma columna.
   const ignoradas = new Map<string, string>();
+  // Columna -> clave de la columna ignorada, segun la ultima cabecera.
+  let clavesPorColumna = new Map<number, string>();
+  const marcas = new Map<string, number>();
   const resultado: FilaListado[] = [];
 
   filas.forEach((celdas, i) => {
@@ -69,9 +53,12 @@ export const interpretarListado = (filas: string[][]): ListadoLeido => {
     if (iResp >= 0 && iNino >= 0) {
       colResponsables = iResp;
       colNino = iNino;
+      clavesPorColumna = new Map();
       celdas.forEach((c, j) => {
         const clave = normalizadas[j];
-        if (j !== iResp && j !== iNino && clave && !ignoradas.has(clave)) ignoradas.set(clave, c.replace(/\s+/g, " "));
+        if (j === iResp || j === iNino || !clave) return;
+        clavesPorColumna.set(j, clave);
+        if (!ignoradas.has(clave)) ignoradas.set(clave, c.replace(/\s+/g, " "));
       });
       if (ninosEnBloque > 0) {
         bloque += 1;
@@ -86,12 +73,19 @@ export const interpretarListado = (filas: string[][]): ListadoLeido => {
       .split("/")
       .map((r) => r.trim().replace(/\s+/g, " "))
       .filter((r) => tokens(r).length > 0);
-    resultado.push({ fila: i + 1, bloque, nino: nino.replace(/\s+/g, " "), responsables });
+    const pagado = [...clavesPorColumna].filter(([j]) => esMarcaPagado(celdas[j] ?? "")).map(([, clave]) => clave);
+    pagado.forEach((c) => marcas.set(c, (marcas.get(c) ?? 0) + 1));
+    resultado.push({ fila: i + 1, bloque, nino: nino.replace(/\s+/g, " "), responsables, pagado });
     ninosEnBloque += 1;
   });
 
   if (resultado.length === 0) {
     throw badRequest("No se ha encontrado ningún niño. Revisa que haya una columna con los responsables y otra con el niño.");
   }
-  return { filas: resultado, bloques: bloque + 1, columnasIgnoradas: [...ignoradas.values()] };
+  return {
+    filas: resultado,
+    bloques: bloque + 1,
+    columnasIgnoradas: [...ignoradas.values()],
+    columnasPago: [...marcas].map(([clave, n]) => ({ clave, titulo: ignoradas.get(clave)!, marcas: n })),
+  };
 };

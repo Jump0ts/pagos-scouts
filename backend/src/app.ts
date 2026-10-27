@@ -12,6 +12,7 @@ import { familiasRouter } from "./modules/familias/familias.routes.js";
 import { importacionesRouter } from "./modules/importaciones/importaciones.routes.js";
 import { healthRouter } from "./modules/health/health.routes.js";
 import { invitacionesRouter } from "./modules/invitaciones/invitaciones.routes.js";
+import { movimientosRouter } from "./modules/movimientos/movimientos.routes.js";
 import { restablecerRouter } from "./modules/restablecer/restablecer.routes.js";
 import { seccionesRouter } from "./modules/secciones/secciones.routes.js";
 import { usuariosRouter } from "./modules/usuarios/usuarios.routes.js";
@@ -38,6 +39,7 @@ export const createApp = () => {
   app.use("/api/familias", requiereSesion, requiereGrupo, familiasRouter);
   app.use("/api/eventos", requiereSesion, requiereGrupo, eventosRouter);
   app.use("/api/importaciones", requiereSesion, requiereGrupo, importacionesRouter);
+  app.use("/api/movimientos", requiereSesion, requiereGrupo, movimientosRouter);
   app.use("/api/usuarios", requiereSesion, requiereGrupo, requiereRol("ADMIN"), usuariosRouter);
 
   app.use("/api", notFoundHandler);

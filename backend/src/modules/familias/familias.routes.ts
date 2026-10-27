@@ -2,6 +2,7 @@ import { Router } from "express";
 import { requiereRol } from "../../middleware/auth.js";
 import { prisma } from "../../prisma.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
+import { conflict } from "../../utils/errors.js";
 import { validar } from "../../utils/validar.js";
 import { cursoActivo } from "../cursos/cursos.utils.js";
 import { editarFamiliaSchema } from "./familias.schema.js";
@@ -38,13 +39,15 @@ familiasRouter.patch(
   }),
 );
 
-// D-30: borrado definitivo de una familia con todos sus niños. Solo administradores.
-// Cuando existan los pagos (parte 4) se impedira si la familia tiene alguno registrado.
+// D-30: borrado definitivo de una familia con todos sus niños. Solo administradores, y nunca si tiene pagos.
 familiasRouter.delete(
   "/:id",
   requiereRol("ADMIN"),
   asyncHandler(async (req, res) => {
     const familia = await familiaDelGrupo(req.params.id, req.grupo!.id);
+    if (await prisma.asignacion.count({ where: { cargo: { educando: { familiaId: familia.id } } } })) {
+      throw conflict("Esta familia tiene pagos registrados. Puedes dar de baja a sus niños; su historial se conserva.");
+    }
     await prisma.familia.delete({ where: { id: familia.id } });
     res.status(204).end();
   }),

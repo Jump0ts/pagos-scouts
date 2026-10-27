@@ -10,6 +10,7 @@ import { sincronizarCargos } from "../eventos/cargos.sincronizar.js";
 import { comprobarSeccionesDelGrupo } from "../secciones/secciones.utils.js";
 import { confirmarListadoSchema } from "./importaciones.schema.js";
 import { analizarListado } from "./listado.analisis.js";
+import { importarMarcas } from "./listado.marcas.js";
 import { interpretarListado, leerFilas } from "./listado.parser.js";
 
 // D-28: asistente de importacion del listado. Solo Admin y Tesoreria.
@@ -55,6 +56,8 @@ importacionesRouter.post(
       async (tx) => {
         const curso = await obtenerOCrearCurso(tx, grupoId, datos.curso);
         const cuenta = { familiasNuevas: 0, ninosNuevos: 0, ninosActualizados: 0 };
+        // D-44: los niños con marcas "Pagado" en columnas ligadas a un evento.
+        const marcados: { educandoId: string; familiaId: string; claves: string[] }[] = [];
 
         for (const familia of datos.familias) {
           let familiaId = familia.existenteId;
@@ -88,8 +91,9 @@ importacionesRouter.post(
                 update: { seccionId, bajaEn: null },
               });
               cuenta.ninosActualizados += 1;
+              if (nino.pagado.length) marcados.push({ educandoId: nino.existenteId, familiaId: familiaId!, claves: nino.pagado });
             } else {
-              await tx.educando.create({
+              const creado = await tx.educando.create({
                 data: {
                   grupoId,
                   familiaId,
@@ -99,11 +103,13 @@ importacionesRouter.post(
                 },
               });
               cuenta.ninosNuevos += 1;
+              if (nino.pagado.length) marcados.push({ educandoId: creado.id, familiaId: familiaId!, claves: nino.pagado });
             }
           }
         }
         await sincronizarCargos(tx, grupoId);
-        return { curso: { id: curso.id, nombre: curso.nombre }, ...cuenta };
+        const marcas = await importarMarcas(tx, grupoId, curso.id, req.sesion!.usuario.id, datos.columnasPago, marcados);
+        return { curso: { id: curso.id, nombre: curso.nombre }, ...cuenta, ...marcas };
       },
       { timeout: 30_000 },
     );

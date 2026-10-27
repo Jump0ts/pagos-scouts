@@ -19,6 +19,7 @@ export const confirmarListadoSchema = z.object({
               nombre: z.string().trim().min(1).max(60),
               apellidos: z.string().trim().max(80),
               bloque: z.number().int().min(0),
+              pagado: z.array(z.string().max(120)).max(20).default([]),
             }),
           )
           .min(1),
@@ -26,6 +27,11 @@ export const confirmarListadoSchema = z.object({
     )
     .min(1, "No hay ningún niño que importar")
     .max(1500),
+  // D-44: a que evento corresponde cada columna con marcas "Pagado" (las que no se mandan, no se importan).
+  columnasPago: z
+    .array(z.object({ clave: z.string().min(1).max(120), titulo: z.string().trim().min(1).max(120), eventoId: z.string().min(1) }))
+    .max(20)
+    .default([]),
 });
 
 export type ConfirmarListado = z.infer<typeof confirmarListadoSchema>;

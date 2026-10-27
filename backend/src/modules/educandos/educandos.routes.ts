@@ -160,12 +160,15 @@ const cambiarBaja = (baja: boolean) =>
 educandosRouter.post("/:id/baja", gestion, cambiarBaja(true));
 educandosRouter.delete("/:id/baja", gestion, cambiarBaja(false));
 
-// D-30: borrado definitivo, solo administradores. Cuando existan los pagos (parte 4) se impedira si tiene alguno.
+// D-30: borrado definitivo, solo administradores, y nunca si tiene algun pago registrado.
 educandosRouter.delete(
   "/:id",
   requiereRol("ADMIN"),
   asyncHandler(async (req, res) => {
     const educando = await educandoDelGrupo(req.params.id, req.grupo!.id);
+    if (await prisma.asignacion.count({ where: { cargo: { educandoId: educando.id } } })) {
+      throw conflict("Tiene pagos registrados. Puedes darle de baja; su historial se conserva.");
+    }
     await prisma.$transaction(async (tx) => {
       await tx.educando.delete({ where: { id: educando.id } });
       const quedan = await tx.educando.count({ where: { familiaId: educando.familiaId } });
