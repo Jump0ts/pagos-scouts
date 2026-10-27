@@ -65,3 +65,22 @@ export const useEditarFamilia = () =>
 
 export const useBorrarFamilia = () =>
   useMutation({ mutationFn: (id: string) => api<void>(`/familias/${id}`, { metodo: "DELETE" }), onSuccess: useRefrescar() });
+
+// D-48: aplicar el saldo a favor a una deuda cambia lo cobrado del evento y el sobrante de los pagos.
+export const useAplicarSaldo = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ familiaId, cargoId }: { familiaId: string; cargoId: string }) =>
+      api<{ aplicadoCentimos: number }>(`/familias/${familiaId}/saldo/aplicar`, { metodo: "POST", cuerpo: { cargoId } }),
+    onSuccess: () =>
+      Promise.all([["familia"], ["eventos"], ["evento"], ["movimientos"]].map((queryKey) => queryClient.invalidateQueries({ queryKey }))),
+  });
+};
+
+// D-1: olvidar un nombre de quien paga aprendido para la familia.
+export const useOlvidarPagador = () =>
+  useMutation({
+    mutationFn: ({ familiaId, pagadorId }: { familiaId: string; pagadorId: string }) =>
+      api<void>(`/familias/${familiaId}/pagadores/${pagadorId}`, { metodo: "DELETE" }),
+    onSuccess: useRefrescar(),
+  });

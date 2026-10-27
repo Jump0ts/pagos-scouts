@@ -8,6 +8,7 @@ import { Confirmar } from "@/components/Confirmar";
 import { Dialogo } from "@/components/Dialogo";
 import { usePerfil } from "@/features/auth/useSesion";
 import { ESTADOS } from "@/features/eventos/eventos.constants";
+import { ETIQUETA_MEDIO } from "@/features/movimientos/movimientos.constants";
 import { ChipSeccion } from "@/features/secciones/ChipSeccion";
 import { useSecciones } from "@/features/secciones/secciones.api";
 import { mensajeDeError } from "@/utils/api";
@@ -15,14 +16,19 @@ import { cx } from "@/utils/cx";
 import { euros } from "@/utils/dinero";
 import { EducandoDialogo } from "./EducandoDialogo";
 import {
-  useBorrarEducando, useBorrarFamilia, useCambiarBaja, useEditarEducando, useEditarFamilia, useFichaFamilia,
+  useAplicarSaldo, useBorrarEducando, useBorrarFamilia, useCambiarBaja, useEditarEducando, useEditarFamilia, useFichaFamilia,
+  useOlvidarPagador,
 } from "./educandos.api";
-import type { HijoEnFicha } from "./educandos.types";
+import type { HijoEnFicha, PagoEnFicha } from "./educandos.types";
 import { ResponsablesCampos } from "./ResponsablesCampos";
 
 const fechaLarga = (f: string) => new Date(`${f}T12:00:00`).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
 
-const claseItem ="flex cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm outline-none data-[highlighted]:bg-hundido";
+// Cómo llegó un pago: "Banco", "A mano · Efectivo", "Listado".
+const origenPago = (p: PagoEnFicha) =>
+  p.origen === "BANCO" ? "Banco" : p.origen === "LISTADO" ? "Listado" : `A mano${p.medio ? ` · ${ETIQUETA_MEDIO[p.medio]}` : ""}`;
+
+const claseItem = "flex cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm outline-none data-[highlighted]:bg-hundido";
 
 type Pendiente =
   | { tipo: "borrar-hijo"; hijo: HijoEnFicha }
@@ -39,6 +45,8 @@ export const FichaFamiliaDialogo = ({ familiaId, onCerrar }: { familiaId: string
   const baja = useCambiarBaja();
   const borrarHijo = useBorrarEducando();
   const borrarFamilia = useBorrarFamilia();
+  const aplicarSaldo = useAplicarSaldo();
+  const olvidarPagador = useOlvidarPagador();
   const moverHijo = useEditarEducando();
 
   const [editando, setEditando] = useState(false);
@@ -150,6 +158,16 @@ export const FichaFamiliaDialogo = ({ familiaId, onCerrar }: { familiaId: string
                                 <span className={cx("rounded-full px-2 py-0.5 text-xs font-semibold", ESTADOS[c.estado].clase)}>
                                   {ESTADOS[c.estado].etiqueta}
                                 </span>
+                                {familia.saldoCentimos > 0 && (c.estado === "PENDIENTE" || c.estado === "PARCIAL") && (
+                                  <button
+                                    type="button"
+                                    disabled={aplicarSaldo.isPending}
+                                    onClick={() => aplicarSaldo.mutate({ familiaId: familia.id, cargoId: c.id })}
+                                    className="rounded-full px-2 py-0.5 text-xs font-semibold text-azul ring-1 ring-azul/40 hover:bg-azul-claro disabled:opacity-50"
+                                  >
+                                    Usar saldo<span className="sr-only"> en {c.evento.nombre} de {hijo.nombre}</span>
+                                  </button>
+                                )}
                               </li>
                             ))}
                           </ul>
@@ -198,14 +216,24 @@ export const FichaFamiliaDialogo = ({ familiaId, onCerrar }: { familiaId: string
             </section>
 
             <section aria-labelledby="ficha-pagos" className="flex flex-col gap-3">
-              <h3 id="ficha-pagos" className="text-xs font-bold tracking-[.12em] text-suave uppercase">Pagos recibidos</h3>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 id="ficha-pagos" className="text-xs font-bold tracking-[.12em] text-suave uppercase">Pagos recibidos</h3>
+                {familia.saldoCentimos > 0 && (
+                  <span className="rounded-full bg-azul-claro px-2.5 py-0.5 text-xs font-semibold text-azul">
+                    Saldo a favor: {euros(familia.saldoCentimos)}
+                  </span>
+                )}
+              </div>
+              {aplicarSaldo.error && <Aviso tono="error">{mensajeDeError(aplicarSaldo.error)}</Aviso>}
               {familia.pagos.length ? (
                 <ul className="divide-y divide-linea overflow-hidden rounded-2xl ring-1 ring-linea">
                   {familia.pagos.map((p) => (
                     <li key={p.id} className="flex items-baseline justify-between gap-3 px-4 py-2.5">
                       <span className="min-w-0">
                         <span className="block truncate text-sm font-semibold">{p.concepto}</span>
-                        <span className="text-xs text-suave">{p.fecha ? fechaLarga(p.fecha) : "Sin fecha"}</span>
+                        <span className="text-xs text-suave">
+                          {origenPago(p)} · {p.fecha ? fechaLarga(p.fecha) : "sin fecha"}
+                        </span>
                       </span>
                       <span className="font-semibold tabular-nums">{euros(p.importeCentimos)}</span>
                     </li>
@@ -215,6 +243,29 @@ export const FichaFamiliaDialogo = ({ familiaId, onCerrar }: { familiaId: string
                 <p className="text-sm text-suave">Aún no hay pagos de esta familia.</p>
               )}
             </section>
+
+            {familia.pagadores.length > 0 && (
+              <section aria-labelledby="ficha-pagadores" className="flex flex-col gap-3">
+                <h3 id="ficha-pagadores" className="text-xs font-bold tracking-[.12em] text-suave uppercase">Quién paga (aprendido)</h3>
+                <ul className="flex flex-col gap-1">
+                  {familia.pagadores.map((p) => (
+                    <li key={p.id} className="flex items-center justify-between gap-3">
+                      <span className="min-w-0 truncate text-sm font-semibold">{p.nombre}</span>
+                      <Boton
+                        variante="fantasma"
+                        tamano="pequeno"
+                        disabled={olvidarPagador.isPending}
+                        onClick={() => olvidarPagador.mutate({ familiaId: familia.id, pagadorId: p.id })}
+                        aria-label={`Olvidar a ${p.nombre}`}
+                      >
+                        Olvidar
+                      </Boton>
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-sm text-suave">Los pagos de estos nombres se reconocen solos como de esta familia.</p>
+              </section>
+            )}
 
             {esAdmin && (
               <div className="border-t border-linea pt-4">
