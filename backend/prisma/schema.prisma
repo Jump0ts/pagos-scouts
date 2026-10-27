@@ -307,16 +307,28 @@ model Restablecimiento {
   @@index([usuarioId])
 }
 
-// D-41: BANCO viene del Excel del banco; LISTADO, de una marca "Pagado" del listado (D-44). Los pagos a mano
-// llegan en la parte 6.
+// D-41: BANCO viene del Excel del banco; LISTADO, de una marca "Pagado" del listado (D-44); MANUAL, apuntado a
+// mano (D-46).
 enum OrigenMovimiento {
   BANCO
   LISTADO
+  MANUAL
 }
 
+// OTRO_INGRESO: no es de ninguna familia (D-49). CRUZADO: un pago a mano o una marca que resulto ser el mismo
+// dinero que uno del banco; su reparto lo tiene ahora el del banco (D-51).
 enum EstadoMovimiento {
   CLASIFICADO
   DUDA
+  OTRO_INGRESO
+  CRUZADO
+}
+
+enum MedioPago {
+  EFECTIVO
+  BIZUM
+  TRANSFERENCIA
+  OTRO
 }
 
 // Por que un movimiento esta en Dudas (D-5).
@@ -326,6 +338,7 @@ enum MotivoDuda {
   NO_CUADRA
   VARIAS_COMBINACIONES
   POSIBLE_YA_MARCADO
+  POSIBLE_YA_APUNTADO
   DESHECHO
 }
 
@@ -353,6 +366,13 @@ model Movimiento {
   clasificadoEn    DateTime?
   importadoPorId   String?
   importadoPor     Usuario?         @relation("MovimientoImportadoPor", fields: [importadoPorId], references: [id], onDelete: SetNull)
+  // Pago a mano: como se pago. Otro ingreso: nota corta opcional (D-49).
+  medio            MedioPago?
+  nota             String?
+  // D-51: en un pago a mano o una marca cruzados, el movimiento del banco que es el mismo dinero.
+  cruzadoConId     String?          @unique
+  cruzadoCon       Movimiento?      @relation("Cruce", fields: [cruzadoConId], references: [id], onDelete: SetNull)
+  cruzadoDesde     Movimiento?      @relation("Cruce")
   creadoEn         DateTime         @default(now())
 
   asignaciones Asignacion[]

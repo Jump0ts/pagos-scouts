@@ -24,6 +24,7 @@ const contexto = (extra: Partial<Contexto> = {}): Contexto => ({
     ["diaz", [{ cargoId: "cuota-leo", pendienteCentimos: 11000, orden: 2 }]],
   ]),
   conMarcas: new Set(),
+  apuntados: new Map(),
   ...extra,
 });
 
@@ -83,6 +84,13 @@ describe("clasificar (D-5)", () => {
   it("si la familia tiene marcas del listado, avisa de que puede estar ya pagado (D-44)", () => {
     const ctx = contexto({ conMarcas: new Set(["gil"]) });
     expect(clasificar("Lucía Ferrer Soto", 5000, ctx)).toMatchObject({ motivo: "POSIBLE_YA_MARCADO" });
+  });
+
+  it("un pago a mano del mismo importe sin cruzar manda el del banco a Dudas, una sola vez (D-51)", () => {
+    const ctx = contexto({ apuntados: new Map([["gil", [{ id: "m1", origen: "MANUAL", importeCentimos: 19500 }]]]) });
+    expect(clasificar("Lucía Ferrer Soto", 19500, ctx)).toEqual({ estado: "DUDA", motivo: "POSIBLE_YA_APUNTADO", familiaId: "gil", cargosSugeridos: [] });
+    // El segundo ingreso igual ya no tiene con qué cruzarse: se clasifica normalmente.
+    expect(clasificar("Lucía Ferrer Soto", 19500, ctx)).toMatchObject({ estado: "CLASIFICADO" });
   });
 
   it("con solo un apellido en el listado no es seguro: sugiere la familia y sus cargos", () => {

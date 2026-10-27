@@ -3,7 +3,7 @@ import { persona, tokens } from "../../utils/nombres.js";
 import { cursoActivo } from "../cursos/cursos.utils.js";
 import { importeDe } from "../eventos/cargos.utils.js";
 import type { BancoLeido, MovimientoLeido } from "./banco.parser.js";
-import { clasificar, descontar, type CargoPendiente, type Contexto } from "./clasificacion.js";
+import { clasificar, clavePagador, descontar, type Apuntado, type CargoPendiente, type Contexto } from "./clasificacion.js";
 import type { CargoDeMovimiento, ResumenImportacion } from "./movimientos.types.js";
 
 type Db = Prisma.TransactionClient;
@@ -11,7 +11,7 @@ type Db = Prisma.TransactionClient;
 /** Todo lo que necesita el motor: familias, pagadores aprendidos y lo pendiente del curso activo (D-43). */
 export const cargarContexto = async (db: Db, grupoId: string) => {
   const curso = await cursoActivo(grupoId, db);
-  const [familias, pagadores, cargos, marcadas] = await Promise.all([
+  const [familias, pagadores, cargos, marcadas, apuntados] = await Promise.all([
     db.familia.findMany({
       where: { grupoId },
       select: { id: true, nombre: true, responsables: { select: { nombreCompleto: true } }, educandos: { select: { apellidos: true } } },
@@ -31,7 +31,19 @@ export const cargarContexto = async (db: Db, grupoId: string) => {
         })
       : [],
     db.movimiento.findMany({ where: { grupoId, origen: "LISTADO", familiaId: { not: null } }, select: { familiaId: true } }),
+    // D-51: lo apuntado a mano o marcado en el listado que todavia no se ha cruzado con el banco.
+    db.movimiento.findMany({
+      where: { grupoId, origen: { in: ["MANUAL", "LISTADO"] }, estado: "CLASIFICADO", cruzadoConId: null, familiaId: { not: null } },
+      select: { id: true, origen: true, importeCentimos: true, familiaId: true },
+      orderBy: { creadoEn: "asc" },
+    }),
   ]);
+  const apuntadosPorFamilia = new Map<string, Apuntado[]>();
+  for (const a of apuntados) {
+    const lista = apuntadosPorFamilia.get(a.familiaId!) ?? [];
+    lista.push({ id: a.id, origen: a.origen as Apuntado["origen"], importeCentimos: a.importeCentimos });
+    apuntadosPorFamilia.set(a.familiaId!, lista);
+  }
 
   const pendientes = new Map<string, CargoPendiente[]>();
   const cargosPorId = new Map<string, Omit<CargoDeMovimiento, "importeCentimos">>();
@@ -55,11 +67,46 @@ export const cargarContexto = async (db: Db, grupoId: string) => {
     })),
     pendientes,
     conMarcas: new Set(marcadas.map((m) => m.familiaId!)),
+    apuntados: apuntadosPorFamilia,
   };
   return { contexto, familias: new Map(familias.map((f) => [f.id, f.nombre])), cargosPorId };
 };
 
 const aTexto = (f: Date) => f.toISOString().slice(0, 10);
+
+/**
+ * D-50: tras aprender un pagador, sus otras dudas del banco vuelven a pasar por el motor. Las que ahora cuadran sin
+ * duda se clasifican; el resto se queda en Dudas con la sugerencia al dia. Las deshechas a mano no se tocan.
+ */
+export const reintentarDudas = async (db: Db, grupoId: string, clave: string) => {
+  const dudas = await db.movimiento.findMany({
+    where: { grupoId, origen: "BANCO", estado: "DUDA", NOT: { motivoDuda: "DESHECHO" } },
+    orderBy: [{ fecha: "asc" }, { numeroBanco: "asc" }],
+  });
+  const suyas = dudas.filter((d) => clavePagador(d.concepto) === clave);
+  if (!suyas.length) return 0;
+  const { contexto } = await cargarContexto(db, grupoId);
+  let clasificadas = 0;
+  for (const d of suyas) {
+    const r = clasificar(d.concepto, d.importeCentimos, contexto);
+    if (r.estado === "CLASIFICADO") {
+      descontar(contexto, r.familiaId, r.asignaciones);
+      clasificadas += 1;
+    }
+    await db.movimiento.update({
+      where: { id: d.id },
+      data: {
+        estado: r.estado,
+        motivoDuda: r.estado === "DUDA" ? r.motivo : null,
+        familiaId: r.familiaId,
+        cargosSugeridos: r.estado === "DUDA" ? r.cargosSugeridos : [],
+        clasificadoEn: r.estado === "CLASIFICADO" ? new Date() : null,
+        ...(r.estado === "CLASIFICADO" && { asignaciones: { create: r.asignaciones } }),
+      },
+    });
+  }
+  return clasificadas;
+};
 
 // Un cargo sugerido en Dudas, con lo que le falta por pagar.
 const pendienteDe = (contexto: Contexto, familiaId: string | null, cargoId: string) => ({

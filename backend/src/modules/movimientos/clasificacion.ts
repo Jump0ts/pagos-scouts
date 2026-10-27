@@ -16,7 +16,11 @@ export type Contexto = {
   pendientes: Map<string, CargoPendiente[]>;
   // Familias con pagos marcados en el listado (D-44).
   conMarcas: Set<string>;
+  // D-51: por familia, los pagos a mano y las marcas del listado que aun no estan cruzados con uno del banco.
+  apuntados: Map<string, Apuntado[]>;
 };
+
+export type Apuntado = { id: string; origen: "MANUAL" | "LISTADO"; importeCentimos: number };
 
 export type AsignacionPropuesta = { cargoId: string; importeCentimos: number };
 
@@ -97,7 +101,17 @@ export const clasificar = (concepto: string, importeCentimos: number, contexto: 
     segura = empatadas[0].id;
   }
 
-  // 2) Los cargos: solo si una unica combinacion de lo pendiente suma exactamente el importe.
+  // 2) Si ya hay apuntado un pago de ese importe (a mano o en el listado), puede ser el mismo dinero: lo decide
+  // una persona (D-51). Cada apuntado solo puede avisar a un movimiento.
+  const apuntados = contexto.apuntados.get(segura) ?? [];
+  const igual = apuntados.find((a) => a.importeCentimos === importeCentimos);
+  if (igual) {
+    contexto.apuntados.set(segura, apuntados.filter((a) => a !== igual));
+    const motivo = igual.origen === "MANUAL" ? "POSIBLE_YA_APUNTADO" : "POSIBLE_YA_MARCADO";
+    return { estado: "DUDA", motivo, familiaId: segura, cargosSugeridos: [] };
+  }
+
+  // 3) Los cargos: solo si una unica combinacion de lo pendiente suma exactamente el importe.
   const opciones = opcionesDe(segura);
   if (opciones.length === 1) {
     const asignaciones = opciones[0].map((c) => ({ cargoId: c.cargoId, importeCentimos: c.pendienteCentimos }));
