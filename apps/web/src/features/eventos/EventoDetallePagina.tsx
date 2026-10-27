@@ -118,7 +118,9 @@ export const EventoDetallePagina = () => {
         </dl>
         <BarraProgreso valor={resumen.pagadoCentimos} total={resumen.debidoCentimos} etiqueta="Cobrado del evento" />
         {resumen.pagadoCentimos === 0 && resumen.debidoCentimos > 0 && (
-          <p className="text-sm text-suave">Los pagos se cruzarán con el Excel del banco cuando llegue esa parte.</p>
+          <p className="text-sm text-suave">
+            {gestiona ? "Aún no hay pagos: importa el Excel del banco en Movimientos." : "Aún no hay pagos registrados."}
+          </p>
         )}
       </section>
 

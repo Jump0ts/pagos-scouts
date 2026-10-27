@@ -1,15 +1,17 @@
 import * as Menu from "@radix-ui/react-dropdown-menu";
-import { CalendarDays, House, LogOut, Settings, Tent, UserRound, Users } from "lucide-react";
+import { CalendarDays, House, Landmark, LogOut, Settings, Tent, UserRound, Users } from "lucide-react";
+import type { Rol } from "@/features/auth/auth.types";
 import { Link, NavLink, Outlet } from "react-router";
 import { useCerrarSesion, usePerfil } from "@/features/auth/useSesion";
 import { SelectorGrupo } from "@/features/grupos/SelectorGrupo";
 import { SinGrupo } from "@/features/grupos/SinGrupo";
 import { cx } from "@/utils/cx";
 
-// La entrada de Dudas se añade cuando llegue su parte.
-const NAVEGACION = [
+// roles: quien ve la entrada (sin roles, todos). Los movimientos del banco no los ve un scouter (D-16).
+const NAVEGACION: { a: string; texto: string; icono: typeof House; fin: boolean; roles?: Rol[] }[] = [
   { a: "/", texto: "Inicio", icono: House, fin: true },
   { a: "/eventos", texto: "Eventos", icono: CalendarDays, fin: false },
+  { a: "/movimientos", texto: "Movimientos", icono: Landmark, fin: false, roles: ["ADMIN", "TESORERIA"] },
   { a: "/educandos", texto: "Educandos", icono: Users, fin: false },
   { a: "/ajustes", texto: "Ajustes", icono: Settings, fin: false },
 ];
@@ -24,6 +26,7 @@ const iniciales = (nombre: string) =>
 export const AppLayout = () => {
   const { usuario, grupoActivo } = usePerfil();
   const cerrarSesion = useCerrarSesion();
+  const entradas = NAVEGACION.filter((e) => !e.roles || (grupoActivo && e.roles.includes(grupoActivo.rol)));
 
   return (
     <div className="min-h-dvh pb-24 md:pb-10">
@@ -43,7 +46,7 @@ export const AppLayout = () => {
           </div>
 
           <nav aria-label="Principal" className="ml-2 hidden gap-1 md:flex">
-            {NAVEGACION.map(({ a, texto, icono: Icono, fin }) => (
+            {entradas.map(({ a, texto, icono: Icono, fin }) => (
               <NavLink
                 key={a}
                 to={a}
@@ -103,13 +106,13 @@ export const AppLayout = () => {
         className="fixed inset-x-0 bottom-0 z-20 flex justify-around border-t border-linea bg-superficie/95 pt-2 backdrop-blur md:hidden"
         style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}
       >
-        {NAVEGACION.map(({ a, texto, icono: Icono, fin }) => (
+        {entradas.map(({ a, texto, icono: Icono, fin }) => (
           <NavLink
             key={a}
             to={a}
             end={fin}
             className={({ isActive }) =>
-              cx("flex flex-col items-center gap-0.5 px-4 text-[11px] font-semibold", isActive ? "text-bosque" : "text-suave")
+              cx("flex min-w-0 flex-1 flex-col items-center gap-0.5 px-1 text-[11px] font-semibold", isActive ? "text-bosque" : "text-suave")
             }
           >
             {({ isActive }) => (

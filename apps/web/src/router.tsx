@@ -11,6 +11,8 @@ import { EventoFormularioPagina } from "./features/eventos/EventoFormularioPagin
 import { EventosPagina } from "./features/eventos/EventosPagina";
 import { ImportarListadoPagina } from "./features/importaciones/ImportarListadoPagina";
 import { InicioPagina } from "./features/inicio/InicioPagina";
+import { ImportarMovimientosPagina } from "./features/movimientos/ImportarMovimientosPagina";
+import { MovimientosPagina } from "./features/movimientos/MovimientosPagina";
 import { SeccionesAjustes } from "./features/secciones/SeccionesAjustes";
 import { PersonasAjustes } from "./features/usuarios/PersonasAjustes";
 import { AppLayout } from "./layout/AppLayout";
@@ -38,6 +40,8 @@ export const rutas = [
               { path: "educandos/importar", element: <ImportarListadoPagina /> },
               { path: "eventos/nuevo", element: <EventoFormularioPagina /> },
               { path: "eventos/:id/editar", element: <EventoFormularioPagina /> },
+              { path: "movimientos", element: <MovimientosPagina /> },
+              { path: "movimientos/importar", element: <ImportarMovimientosPagina /> },
             ],
           },
           {

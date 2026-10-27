@@ -6,6 +6,8 @@ export type NinoPropuesto = {
   apellidos: string;
   existenteId: string | null;
   seccionActualId: string | null;
+  // Columnas en las que tiene la marca "Pagado" (D-44).
+  pagado: string[];
 };
 
 export type FamiliaPropuesta = {
@@ -21,6 +23,7 @@ export type AnalisisListado = {
   bloques: { indice: number; total: number; ejemplos: string[] }[];
   familias: FamiliaPropuesta[];
   columnasIgnoradas: string[];
+  columnasPago: { clave: string; titulo: string; marcas: number }[];
   noAparecen: { id: string; nombre: string; seccionId: string }[];
   cursoSugerido: string;
 };
@@ -30,4 +33,7 @@ export type ResultadoImportacion = {
   familiasNuevas: number;
   ninosNuevos: number;
   ninosActualizados: number;
+  marcasImportadas: number;
+  marcasSinCargo: number;
+  marcasYaPagadas: number;
 };

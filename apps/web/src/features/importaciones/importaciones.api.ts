@@ -1,5 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CLAVE_EDUCANDOS } from "@/features/educandos/educandos.api";
+import { CLAVE_EVENTOS } from "@/features/eventos/eventos.api";
+import { CLAVE_MOVIMIENTOS } from "@/features/movimientos/movimientos.api";
 import { api } from "@/utils/api";
 import type { AnalisisListado, ResultadoImportacion } from "./importaciones.types";
 
@@ -16,8 +18,10 @@ export type ConfirmacionListado = {
     existenteId: string | null;
     nombre: string;
     responsables: string[];
-    ninos: { existenteId: string | null; nombre: string; apellidos: string; bloque: number }[];
+    ninos: { existenteId: string | null; nombre: string; apellidos: string; bloque: number; pagado: string[] }[];
   }[];
+  // D-44: el evento de cada columna con marcas "Pagado" que se quiere importar.
+  columnasPago: { clave: string; titulo: string; eventoId: string }[];
 };
 
 export const useConfirmarListado = () => {
@@ -25,6 +29,7 @@ export const useConfirmarListado = () => {
   return useMutation({
     mutationFn: (datos: ConfirmacionListado) =>
       api<ResultadoImportacion>("/importaciones/listado/confirmar", { metodo: "POST", cuerpo: datos }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: CLAVE_EDUCANDOS }),
+    onSuccess: () =>
+      Promise.all([CLAVE_EDUCANDOS, CLAVE_EVENTOS, CLAVE_MOVIMIENTOS, ["evento"]].map((queryKey) => queryClient.invalidateQueries({ queryKey }))),
   });
 };

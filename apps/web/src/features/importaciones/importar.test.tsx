@@ -16,8 +16,8 @@ const ANALISIS = {
       existenteId: null,
       avisos: [],
       ninos: [
-        { clave: "f2", bloque: 0, nombre: "Mateo", apellidos: "Gil Ferrer", existenteId: null, seccionActualId: null },
-        { clave: "f5", bloque: 1, nombre: "Sara", apellidos: "Gil Ferrer", existenteId: null, seccionActualId: null },
+        { clave: "f2", bloque: 0, nombre: "Mateo", apellidos: "Gil Ferrer", existenteId: null, seccionActualId: null, pagado: [] },
+        { clave: "f5", bloque: 1, nombre: "Sara", apellidos: "Gil Ferrer", existenteId: null, seccionActualId: null, pagado: ["PAGO DEL CENSO"] },
       ],
     },
     {
@@ -26,25 +26,28 @@ const ANALISIS = {
       responsables: [],
       existenteId: null,
       avisos: ["Sin responsables: sus pagos no se podrán reconocer por el nombre de quien paga"],
-      ninos: [{ clave: "f3", bloque: 0, nombre: "Bruno", apellidos: "", existenteId: null, seccionActualId: null }],
+      ninos: [{ clave: "f3", bloque: 0, nombre: "Bruno", apellidos: "", existenteId: null, seccionActualId: null, pagado: [] }],
     },
   ],
-  columnasIgnoradas: ["Pago del censo"],
+  columnasIgnoradas: ["Pago del censo", "Observaciones"],
+  columnasPago: [{ clave: "PAGO DEL CENSO", titulo: "Pago del censo", marcas: 1 }],
   noAparecen: [],
   cursoSugerido: "2026-27",
 };
 
 describe("asistente de importación", () => {
-  it("sube el fichero, asigna secciones, deja quitar a un niño y envía la propuesta revisada", async () => {
-    let enviado: { curso: string; secciones: Record<string, string>; familias: unknown[] } | undefined;
+  it("sube el fichero, asigna secciones y eventos de las marcas, deja quitar a un niño y envía la propuesta", async () => {
+    let enviado: unknown;
     let subido: unknown;
     simularApi({
       "GET /auth/yo": { cuerpo: PERFIL_ADMIN },
       "GET /secciones": { cuerpo: { secciones: SECCIONES } },
+      "GET /eventos": { cuerpo: { curso: { id: "c1", nombre: "2026-27" }, eventos: [{ id: "ev1", nombre: "Censo" }] } },
       "POST /importaciones/listado/analizar": () => ({ cuerpo: ANALISIS }),
       "POST /importaciones/listado/confirmar": (cuerpo) => {
-        enviado = cuerpo as typeof enviado;
-        return { status: 201, cuerpo: { curso: { id: "c1", nombre: "2026-27" }, familiasNuevas: 1, ninosNuevos: 2, ninosActualizados: 0 } };
+        enviado = cuerpo;
+        const marcas = { marcasImportadas: 1, marcasSinCargo: 0, marcasYaPagadas: 0 };
+        return { status: 201, cuerpo: { curso: { id: "c1", nombre: "2026-27" }, familiasNuevas: 1, ninosNuevos: 2, ninosActualizados: 0, ...marcas } };
       },
     });
     const fetchOriginal = globalThis.fetch;
@@ -59,7 +62,8 @@ describe("asistente de importación", () => {
     expect(subido).toBe(archivo);
 
     expect(await screen.findByText(/2 bloques con/)).toBeInTheDocument();
-    expect(screen.getByText(/Se ignoran estas columnas: Pago del censo/)).toBeInTheDocument();
+    expect(screen.getByText("Se ignoran estas columnas: Observaciones.")).toBeInTheDocument();
+    await userEvent.selectOptions(await screen.findByLabelText("Evento de la columna Pago del censo"), "ev1");
     expect(screen.getByRole("button", { name: "Faltan 2 bloques" })).toBeDisabled();
     await userEvent.selectOptions(screen.getByLabelText("Sección del bloque 1"), "s2");
     await userEvent.selectOptions(screen.getByLabelText("Sección del bloque 2"), "s3");
@@ -70,6 +74,7 @@ describe("asistente de importación", () => {
     await userEvent.click(screen.getByRole("button", { name: /Importar 2 niños/ }));
 
     expect(await screen.findByRole("heading", { name: "Listado importado" })).toBeInTheDocument();
+    expect(screen.getByText(/Marcas «Pagado»: 1 apuntadas como pagos/)).toBeInTheDocument();
     expect(enviado).toEqual({
       curso: "2026-27",
       secciones: { 0: "s2", 1: "s3" },
@@ -79,11 +84,12 @@ describe("asistente de importación", () => {
           nombre: "Familia Gil Ferrer",
           responsables: ["Lucía Ferrer Soto"],
           ninos: [
-            { existenteId: null, nombre: "Mateo", apellidos: "Gil Ferrer", bloque: 0 },
-            { existenteId: null, nombre: "Sara", apellidos: "Gil Ferrer", bloque: 1 },
+            { existenteId: null, nombre: "Mateo", apellidos: "Gil Ferrer", bloque: 0, pagado: [] },
+            { existenteId: null, nombre: "Sara", apellidos: "Gil Ferrer", bloque: 1, pagado: ["PAGO DEL CENSO"] },
           ],
         },
       ],
+      columnasPago: [{ clave: "PAGO DEL CENSO", titulo: "Pago del censo", eventoId: "ev1" }],
     });
   });
 

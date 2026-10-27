@@ -16,9 +16,21 @@ const FICHA = {
   nombre: "Familia Gil Ferrer",
   responsables: [{ id: "r1", nombreCompleto: "Lucía Ferrer Soto" }],
   educandos: [
-    { id: "e1", nombre: "Mateo", apellidos: "Gil Ferrer", fechaNacimiento: null, seccionId: "s1", deBaja: false },
-    { id: "e2", nombre: "Sara", apellidos: "Gil Ferrer", fechaNacimiento: null, seccionId: "s2", deBaja: false },
+    { id: "e1", nombre: "Mateo", apellidos: "Gil Ferrer", fechaNacimiento: null, seccionId: "s1", deBaja: false, cargos: [] },
+    {
+      id: "e2",
+      nombre: "Sara",
+      apellidos: "Gil Ferrer",
+      fechaNacimiento: null,
+      seccionId: "s2",
+      deBaja: false,
+      cargos: [
+        { id: "c1", evento: { id: "ev1", nombre: "Cuota" }, importeCentimos: 11000, pagadoCentimos: 11000, estado: "PAGADO" },
+        { id: "c2", evento: { id: "ev2", nombre: "Campamento" }, importeCentimos: 20000, pagadoCentimos: 5000, estado: "PARCIAL" },
+      ],
+    },
   ],
+  pagos: [{ id: "m1", origen: "BANCO", fecha: "2026-10-01", concepto: "LUCIA FERRER SOTO", importeCentimos: 16000 }],
 };
 const BASE = {
   "GET /auth/yo": { cuerpo: PERFIL_ADMIN },
@@ -55,6 +67,11 @@ describe("pantalla Educandos", () => {
     expect(await within(ficha).findByText("Lucía Ferrer Soto")).toBeInTheDocument();
     expect(within(ficha).getByText("Mateo Gil Ferrer")).toBeInTheDocument();
     expect(within(ficha).getByText("Sara Gil Ferrer")).toBeInTheDocument();
+    // Lo que debe y ha pagado cada niño, y los pagos de la familia (D-41).
+    const deSara = within(ficha).getByRole("list", { name: "Pagos de Sara" });
+    expect(within(deSara).getByText("Pagado")).toBeInTheDocument();
+    expect(within(deSara).getByText(/50,00\s€ de 200,00\s€/)).toBeInTheDocument();
+    expect(within(ficha).getByText("LUCIA FERRER SOTO")).toBeInTheDocument();
   });
 
   it("un scouter ve la lista pero no abre fichas ni ve los botones de gestión", async () => {
