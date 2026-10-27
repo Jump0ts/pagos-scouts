@@ -6,6 +6,7 @@ import { badRequest } from "../../utils/errors.js";
 import { contiene, persona } from "../../utils/nombres.js";
 import { validar } from "../../utils/validar.js";
 import { obtenerOCrearCurso } from "../cursos/cursos.utils.js";
+import { sincronizarCargos } from "../eventos/cargos.sincronizar.js";
 import { comprobarSeccionesDelGrupo } from "../secciones/secciones.utils.js";
 import { confirmarListadoSchema } from "./importaciones.schema.js";
 import { analizarListado } from "./listado.analisis.js";
@@ -101,6 +102,7 @@ importacionesRouter.post(
             }
           }
         }
+        await sincronizarCargos(tx, grupoId);
         return { curso: { id: curso.id, nombre: curso.nombre }, ...cuenta };
       },
       { timeout: 30_000 },

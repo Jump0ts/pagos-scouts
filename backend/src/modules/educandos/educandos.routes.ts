@@ -7,6 +7,7 @@ import { asyncHandler } from "../../utils/asyncHandler.js";
 import { badRequest, conflict, notFound } from "../../utils/errors.js";
 import { validar } from "../../utils/validar.js";
 import { cursoActivo, nombreCursoPara, obtenerOCrearCurso } from "../cursos/cursos.utils.js";
+import { sincronizarCargos } from "../eventos/cargos.sincronizar.js";
 import { familiaDelGrupo, nombreFamiliaPara } from "../familias/familias.utils.js";
 import { comprobarSeccionesDelGrupo } from "../secciones/secciones.utils.js";
 import { crearEducandoSchema, editarEducandoSchema } from "./educandos.schema.js";
@@ -82,7 +83,7 @@ educandosRouter.post(
     const educando = await prisma.$transaction(async (tx) => {
       const curso = (await cursoActivo(grupoId, tx)) ?? (await obtenerOCrearCurso(tx, grupoId, nombreCursoPara()));
       const familiaId = await resolverFamilia(tx, grupoId, datos.familia, datos);
-      return tx.educando.create({
+      const creado = await tx.educando.create({
         data: {
           grupoId,
           familiaId,
@@ -93,6 +94,9 @@ educandosRouter.post(
         },
         select: { id: true, familiaId: true },
       });
+      // D-36: el niño nuevo recibe sus cargos de los eventos abiertos de su seccion.
+      await sincronizarCargos(tx, grupoId);
+      return creado;
     });
     res.status(201).json({ educando });
   }),
@@ -131,6 +135,7 @@ educandosRouter.patch(
         const quedan = await tx.educando.count({ where: { familiaId: actual.familiaId } });
         if (quedan === 0) await tx.familia.delete({ where: { id: actual.familiaId } });
       }
+      await sincronizarCargos(tx, grupoId);
     });
     res.json({ educando: await prisma.educando.findUniqueOrThrow({ where: { id: actual.id }, select: { id: true, familiaId: true } }) });
   }),
@@ -148,6 +153,7 @@ const cambiarBaja = (baja: boolean) =>
       data: { bajaEn: baja ? new Date() : null },
     });
     if (count === 0) throw conflict("No está matriculado en el curso actual");
+    await sincronizarCargos(prisma, grupoId);
     res.status(204).end();
   });
 
@@ -164,6 +170,7 @@ educandosRouter.delete(
       await tx.educando.delete({ where: { id: educando.id } });
       const quedan = await tx.educando.count({ where: { familiaId: educando.familiaId } });
       if (quedan === 0) await tx.familia.delete({ where: { id: educando.familiaId } });
+      await sincronizarCargos(tx, educando.grupoId);
     });
     res.status(204).end();
   }),
