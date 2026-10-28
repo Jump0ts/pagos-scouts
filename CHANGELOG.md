@@ -6,6 +6,10 @@ still change.
 
 ## [Unreleased]
 
+### Changed
+- Production server: when a security update needs it (mainly the kernel), the server reboots on its own at 04:30
+  UTC, after the nightly backup (D-64).
+
 ## [0.1.1] - 2026-10-28
 
 ### Fixed

@@ -35,7 +35,7 @@ ningún secreto pasa por el chat ni por el repositorio.
 | Cadena de suministro | Acciones de GitHub fijadas por SHA; se despliega por **digest** y solo si la atestación de procedencia de la imagen se verifica. |
 | Clave SSH de la CI | Con `restrict` y un **comando forzado** (de root, `deploy` no lo puede cambiar): solo puede pedir `deploy <digest> <usuario>`. Sin shell, túneles ni scp. El repositorio de imágenes está fijado en el servidor. |
 | Aprobación | Cada merge a `master` que cambie algo desplegable construye la imagen y el despliegue **espera tu aprobación** en el entorno `production`, que solo admite `master`. |
-| Servidor | SSH solo con clave, `deploy` sin `sudo`, actualizaciones de seguridad automáticas, swap de 1 GB. |
+| Servidor | SSH solo con clave, `deploy` sin `sudo`, actualizaciones de seguridad automáticas con reinicio de madrugada si lo piden (D-64), swap de 1 GB. |
 | Copias | Cifradas con `age` antes de tocar el disco: el servidor solo tiene la clave **pública**. Diarias, antes de cada migración, y bajadas a tu PC con verificación SHA-256. |
 
 ## 2. Qué hay dónde

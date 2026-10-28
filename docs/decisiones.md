@@ -124,6 +124,12 @@ No se borra la antigua.
 | D-62 | **Copias diarias cifradas con `age` y bajadas al PC** | Hay datos reales de menores: cada noche `pg_dump` cifrado con la clave pública de `age` (la privada solo está en el PC del usuario), 7 diarias y 4 semanales, otra antes de cada migración. Un script de Windows las baja a diario verificando SHA-256 y avisa si la última tiene más de 36 h. La prueba de restauración se hace en el PC, que es donde se pueden descifrar. |
 | D-63 | **Arranque de producción** | Tras el primer despliegue el usuario lanza `crear-grupo` en el servidor con su email, abre el enlace de invitación, importa el listado real e invita a su equipo desde Ajustes → Personas. La release 0.1.0 (partes 0–6) es la que se prueba con el equipo y datos reales. |
 
+## Bloque 11 — Operación de producción (2026-10-28)
+
+| # | Decisión | Detalle |
+|---|---|---|
+| D-64 | **Reinicio automático de madrugada tras actualizaciones** | Completa D-59. `unattended-upgrades` reinicia el droplet solo cuando una actualización lo pide (sobre todo las del kernel), a las 04:30 UTC: después de la copia de las 03:15 y con la web casi sin uso. Reinicia aunque haya una sesión SSH abierta. Los contenedores vuelven solos (`restart: unless-stopped`) y el check de Uptime avisa si la web no vuelve. Se descartan el reinicio a mano (el kernel puede quedarse semanas sin parchear) y Livepatch (cuenta y servicio extra para un solo droplet). |
+
 Los importes se guardan en céntimos (enteros), para no tener errores de redondeo.
 
 **Nota sobre ramas:** la parte 1 sale de `pre` y no de `develop`, porque necesita el esqueleto de la parte 0, que aún
