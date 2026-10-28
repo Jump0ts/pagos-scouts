@@ -6,6 +6,19 @@ still change.
 
 ## [Unreleased]
 
+### Changed
+- Production server: when a security update needs it (mainly the kernel), the server reboots on its own at 04:30
+  UTC, after the nightly backup (D-64).
+
+## [0.1.1] - 2026-10-28
+
+### Fixed
+- The monthly restore test (`restore-test.sh`) started its throwaway Postgres with `--mem-limit`, a flag
+  `docker run` does not have, so it always failed on the server; it now uses `--memory`. The deployment tests now
+  cover this script.
+- Production guide: the daily backup download task (`schtasks`) broke on the space in the project path, and ran
+  before the server's nightly backup; a note warns that the key commands of step 3.1 are PowerShell, not `cmd`.
+
 ## [0.1.0] - 2026-10-28
 
 First beta, to be tried by the group's team with real data.

@@ -35,7 +35,7 @@ ningún secreto pasa por el chat ni por el repositorio.
 | Cadena de suministro | Acciones de GitHub fijadas por SHA; se despliega por **digest** y solo si la atestación de procedencia de la imagen se verifica. |
 | Clave SSH de la CI | Con `restrict` y un **comando forzado** (de root, `deploy` no lo puede cambiar): solo puede pedir `deploy <digest> <usuario>`. Sin shell, túneles ni scp. El repositorio de imágenes está fijado en el servidor. |
 | Aprobación | Cada merge a `master` que cambie algo desplegable construye la imagen y el despliegue **espera tu aprobación** en el entorno `production`, que solo admite `master`. |
-| Servidor | SSH solo con clave, `deploy` sin `sudo`, actualizaciones de seguridad automáticas, swap de 1 GB. |
+| Servidor | SSH solo con clave, `deploy` sin `sudo`, actualizaciones de seguridad automáticas con reinicio de madrugada si lo piden (D-64), swap de 1 GB. |
 | Copias | Cifradas con `age` antes de tocar el disco: el servidor solo tiene la clave **pública**. Diarias, antes de cada migración, y bajadas a tu PC con verificación SHA-256. |
 
 ## 2. Qué hay dónde
@@ -71,6 +71,8 @@ New-Item -ItemType Directory -Force $env:USERPROFILE\.age | Out-Null
 age-keygen -o $env:USERPROFILE\.age\pagos-scouts.txt
 ```
 
+- Son órdenes de PowerShell: en `cmd`, `$env:USERPROFILE` no se expande (usa `%USERPROFILE%`) y la clave de age
+  acabaría en otra ruta. Comprueba que existe `%USERPROFILE%\.age\pagos-scouts.txt`.
 - Pon contraseña a la clave de administración.
 - `age-keygen` imprime la clave **pública** (`age1…`); también está en la primera línea del fichero. La necesitas en 3.6.
 - Guarda una copia de `pagos-scouts.txt` en tu gestor de contraseñas: **si se pierde, las copias no sirven**.
@@ -218,11 +220,12 @@ Host pagos-scouts
 ```
 
 La descarga diaria (la clave de administración tiene contraseña: cárgala en el agente de OpenSSH de Windows, o la tarea
-no podrá usarla):
+no podrá usarla). Desde `cmd`; las comillas escapadas (`\"`) hacen falta porque la ruta tiene un espacio, y las 09:00
+dejan margen tras la copia del servidor (03:15 UTC):
 
-```powershell
-powershell -File deploy\prod\backup\pull-backups.ps1 -Server pagos-scouts
-schtasks /Create /SC DAILY /ST 04:00 /TN "Pagos Scouts copias" /TR "powershell -NoProfile -ExecutionPolicy Bypass -File G:\Desktop\Proyectos\Pagos scouts\deploy\prod\backup\pull-backups.ps1 -Server pagos-scouts"
+```bat
+powershell -NoProfile -ExecutionPolicy Bypass -File "G:\Desktop\Proyectos\Pagos scouts\deploy\prod\backup\pull-backups.ps1" -Server pagos-scouts
+schtasks /Create /SC DAILY /ST 09:00 /TN "Pagos Scouts copias" /TR "powershell -NoProfile -ExecutionPolicy Bypass -File \"G:\Desktop\Proyectos\Pagos scouts\deploy\prod\backup\pull-backups.ps1\" -Server pagos-scouts"
 ```
 
 - Solo añade copias nuevas, verifica cada una con SHA-256 y **nunca** replica los borrados del servidor.

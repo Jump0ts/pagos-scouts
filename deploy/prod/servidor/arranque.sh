@@ -5,9 +5,10 @@
 #   bash arranque.sh scouts.josanfersal.dev
 #
 # Deja: usuario `deploy` sin sudo (en el grupo docker) con la clave SSH de root, SSH solo con clave, cortafuegos
-# 22/80/443, actualizaciones de seguridad automáticas, swap de 1 GB, Docker, nginx con el vhost, Certbot, age y la
-# carpeta ~deploy/pagos-scouts con el comando forzado de la CI. Es idempotente: se puede repetir sin romper nada.
-# No crea secretos ni pide el certificado (eso va después, con el DNS ya apuntando aquí).
+# 22/80/443, actualizaciones de seguridad automáticas (con reinicio a las 04:30 UTC si lo piden), swap de 1 GB,
+# Docker, nginx con el vhost, Certbot, age y la carpeta ~deploy/pagos-scouts con el comando forzado de la CI.
+# Es idempotente: se puede repetir sin romper nada. No crea secretos ni pide el certificado (eso va después, con el
+# DNS ya apuntando aquí).
 set -euo pipefail
 
 DOMINIO="${1:?Uso: arranque.sh <dominio>}"
@@ -29,6 +30,12 @@ log "Actualizaciones de seguridad automáticas"
 cat >/etc/apt/apt.conf.d/20auto-upgrades <<'EOF'
 APT::Periodic::Update-Package-Lists "1";
 APT::Periodic::Unattended-Upgrade "1";
+EOF
+# D-64: si una actualización pide reiniciar (kernel), se reinicia de madrugada, después de la copia de las 03:15 UTC.
+cat >/etc/apt/apt.conf.d/52pagos-scouts-reinicio <<'EOF'
+Unattended-Upgrade::Automatic-Reboot "true";
+Unattended-Upgrade::Automatic-Reboot-WithUsers "true";
+Unattended-Upgrade::Automatic-Reboot-Time "04:30";
 EOF
 
 log "Docker (repositorio oficial)"
