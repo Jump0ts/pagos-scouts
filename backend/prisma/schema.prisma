@@ -1,0 +1,413 @@
+// Esquema de la base de datos. Todo dato del grupo cuelga de Grupo y se consulta siempre filtrado por el grupo
+// de la sesion (D-11). Los modelos llegan con cada parte; esta es la parte 1 (grupos, usuarios y secciones).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// D-16. Admin: todo. Tesoreria: todo menos usuarios. Scouter: solo consulta de sus secciones.
+enum Rol {
+  ADMIN
+  TESORERIA
+  SCOUTER
+}
+
+model Grupo {
+  id       String   @id @default(cuid())
+  nombre   String
+  creadoEn DateTime @default(now())
+
+  secciones    Seccion[]
+  membresias   Membresia[]
+  invitaciones Invitacion[]
+  cursos       Curso[]
+  familias     Familia[]
+  educandos    Educando[]
+  eventos      Evento[]
+  movimientos  Movimiento[]
+  pagadores    Pagador[]
+}
+
+// D-3: secciones por defecto, renombrables, ordenables y archivables por grupo.
+model Seccion {
+  id        String   @id @default(cuid())
+  grupoId   String
+  grupo     Grupo    @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  nombre    String
+  // De menor a mayor edad: sirve para el paso de curso (D-2) y el precio de 2o hermano (D-4b).
+  orden     Int
+  // Clave de color del tema de la web (castores, manada, tropa, unidad, clan, scouters).
+  color     String
+  archivada Boolean  @default(false)
+  creadoEn  DateTime @default(now())
+
+  scouters     MembresiaSeccion[]
+  invitaciones InvitacionSeccion[]
+  matriculas   Matricula[]
+  precios      PrecioSeccion[]
+  cargos       Cargo[]
+
+  @@unique([grupoId, nombre])
+  @@index([grupoId])
+}
+
+// D-2: los niños cambian de sección cada curso; eventos y deudas pertenecen a un curso. Un curso activo por grupo.
+model Curso {
+  id       String   @id @default(cuid())
+  grupoId  String
+  grupo    Grupo    @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  // "2026-27"
+  nombre   String
+  activo   Boolean  @default(false)
+  creadoEn DateTime @default(now())
+
+  matriculas Matricula[]
+  eventos    Evento[]
+
+  @@unique([grupoId, nombre])
+  @@index([grupoId])
+}
+
+// D-1: la familia agrupa a los hermanos (estén en la sección que estén) y es a quien se ligan los pagadores.
+model Familia {
+  id       String   @id @default(cuid())
+  grupoId  String
+  grupo    Grupo    @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  // "Familia Gil Ferrer": se propone a partir de los apellidos de los hijos y se puede cambiar.
+  nombre   String
+  creadoEn DateTime @default(now())
+
+  responsables Responsable[]
+  educandos    Educando[]
+  movimientos  Movimiento[]
+  pagadores    Pagador[]
+
+  @@index([grupoId])
+}
+
+// D-27: de los padres o tutores solo se guarda el nombre completo (lo que se busca en el Excel del banco).
+model Responsable {
+  id             String  @id @default(cuid())
+  familiaId      String
+  familia        Familia @relation(fields: [familiaId], references: [id], onDelete: Cascade)
+  nombreCompleto String
+  orden          Int     @default(0)
+
+  @@index([familiaId])
+}
+
+// D-26: solo nombre, apellidos y, opcionalmente, la fecha de nacimiento (para el precio de 2º hermano).
+model Educando {
+  id              String    @id @default(cuid())
+  grupoId         String
+  grupo           Grupo     @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  familiaId       String
+  familia         Familia   @relation(fields: [familiaId], references: [id], onDelete: Cascade)
+  nombre          String
+  apellidos       String    @default("")
+  fechaNacimiento DateTime? @db.Date
+  creadoEn        DateTime  @default(now())
+
+  matriculas Matricula[]
+  cargos     Cargo[]
+
+  @@index([grupoId])
+  @@index([familiaId])
+}
+
+// D-4: "toda la sección" (cuota, censo) genera cargo a cada niño matriculado; "con apuntados", solo a los marcados.
+enum TipoEvento {
+  TODA_SECCION
+  CON_APUNTADOS
+}
+
+// Importes en céntimos (enteros): sin errores de redondeo.
+model Evento {
+  id                    String     @id @default(cuid())
+  grupoId               String
+  grupo                 Grupo      @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  cursoId               String
+  curso                 Curso      @relation(fields: [cursoId], references: [id], onDelete: Cascade)
+  nombre                String
+  tipo                  TipoEvento
+  fechaInicio           DateTime   @db.Date
+  // Hasta cuando esta abierto: los niños que entran despues ya no reciben cargo automatico (D-36).
+  fechaFin              DateTime   @db.Date
+  // D-34: precio de hermanos opcional; 1º paga el de su seccion, 2º y 3º+ precios fijos.
+  descuentoHermanos     Boolean    @default(false)
+  precioSegundoCentimos Int?
+  precioTerceroCentimos Int?
+  creadoEn              DateTime   @default(now())
+
+  precios PrecioSeccion[]
+  cargos  Cargo[]
+
+  @@index([grupoId, cursoId])
+}
+
+model PrecioSeccion {
+  eventoId        String
+  evento          Evento  @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+  seccionId       String
+  seccion         Seccion @relation(fields: [seccionId], references: [id], onDelete: Restrict)
+  importeCentimos Int
+
+  @@id([eventoId, seccionId])
+}
+
+// ACTIVO: debe pagarlo. EXCLUIDO: quitado a mano (no se vuelve a crear solo). ANULADO: por baja o porque su
+// seccion ya no esta en el evento (vuelve a ACTIVO si se reincorpora).
+enum EstadoCargo {
+  ACTIVO
+  EXCLUIDO
+  ANULADO
+}
+
+// Lo que debe un educando en un evento.
+model Cargo {
+  id                       String      @id @default(cuid())
+  eventoId                 String
+  evento                   Evento      @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+  educandoId               String
+  educando                 Educando    @relation(fields: [educandoId], references: [id], onDelete: Cascade)
+  // Seccion por la que se le cobra (la de su matricula en el curso del evento).
+  seccionId                String
+  seccion                  Seccion     @relation(fields: [seccionId], references: [id], onDelete: Restrict)
+  estado                   EstadoCargo @default(ACTIVO)
+  importeCalculadoCentimos Int
+  // D-35: ajuste a mano (0 = exento) y su motivo, que solo ven Admin y Tesoreria.
+  importeAjustadoCentimos  Int?
+  motivoAjuste             String?
+  // 1 = el mayor de los hermanos con cargo en este evento.
+  posicionHermano          Int         @default(1)
+  creadoEn                 DateTime    @default(now())
+
+  asignaciones Asignacion[]
+
+  @@unique([eventoId, educandoId])
+  @@index([educandoId])
+}
+
+// La sección de un niño en un curso. bajaEn marca que dejó el grupo ese curso (D-30): se conserva el historial.
+model Matricula {
+  id         String    @id @default(cuid())
+  educandoId String
+  educando   Educando  @relation(fields: [educandoId], references: [id], onDelete: Cascade)
+  cursoId    String
+  curso      Curso     @relation(fields: [cursoId], references: [id], onDelete: Cascade)
+  seccionId  String
+  seccion    Seccion   @relation(fields: [seccionId], references: [id], onDelete: Restrict)
+  bajaEn     DateTime?
+  creadoEn   DateTime  @default(now())
+
+  @@unique([educandoId, cursoId])
+  @@index([cursoId])
+}
+
+model Usuario {
+  id             String   @id @default(cuid())
+  // Siempre en minusculas y sin espacios.
+  email          String   @unique
+  nombre         String
+  hashContrasena String
+  creadoEn       DateTime @default(now())
+
+  membresias              Membresia[]
+  sesiones                Sesion[]
+  restablecimientos       Restablecimiento[]
+  invitacionesHechas      Invitacion[]       @relation("InvitacionCreadaPor")
+  movimientosImportados   Movimiento[]       @relation("MovimientoImportadoPor")
+  movimientosClasificados Movimiento[]       @relation("MovimientoClasificadoPor")
+}
+
+// Un usuario puede estar en varios grupos, con un rol distinto en cada uno.
+model Membresia {
+  id        String   @id @default(cuid())
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  grupoId   String
+  grupo     Grupo    @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  rol       Rol
+  creadoEn  DateTime @default(now())
+
+  // Solo para Scouter: las secciones que puede consultar.
+  secciones MembresiaSeccion[]
+
+  @@unique([usuarioId, grupoId])
+  @@index([grupoId])
+}
+
+model MembresiaSeccion {
+  membresiaId String
+  membresia   Membresia @relation(fields: [membresiaId], references: [id], onDelete: Cascade)
+  seccionId   String
+  seccion     Seccion   @relation(fields: [seccionId], references: [id], onDelete: Cascade)
+
+  @@id([membresiaId, seccionId])
+}
+
+// D-9: sesion guardada en el servidor; la cookie solo lleva un token aleatorio y aqui se guarda su hash.
+model Sesion {
+  id            String   @id @default(cuid())
+  hashToken     String   @unique
+  usuarioId     String
+  usuario       Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  // Grupo con el que se esta trabajando; se comprueba la membresia en cada peticion.
+  grupoActivoId String?
+  creadaEn      DateTime @default(now())
+  expiraEn      DateTime
+
+  @@index([usuarioId])
+}
+
+// D-15: invitacion de un solo uso que caduca en 7 dias. Solo se guarda el hash del token del enlace.
+model Invitacion {
+  id          String    @id @default(cuid())
+  grupoId     String
+  grupo       Grupo     @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  email       String
+  rol         Rol
+  hashToken   String    @unique
+  expiraEn    DateTime
+  usadaEn     DateTime?
+  creadaEn    DateTime  @default(now())
+  // Nulo cuando la crea el comando del servidor (D-17).
+  creadaPorId String?
+  creadaPor   Usuario?  @relation("InvitacionCreadaPor", fields: [creadaPorId], references: [id], onDelete: SetNull)
+
+  secciones InvitacionSeccion[]
+
+  @@index([grupoId])
+}
+
+model InvitacionSeccion {
+  invitacionId String
+  invitacion   Invitacion @relation(fields: [invitacionId], references: [id], onDelete: Cascade)
+  seccionId    String
+  seccion      Seccion    @relation(fields: [seccionId], references: [id], onDelete: Cascade)
+
+  @@id([invitacionId, seccionId])
+}
+
+// D-21: enlace de un solo uso, caduca en 24 horas; al usarlo se cierran todas las sesiones del usuario.
+model Restablecimiento {
+  id        String    @id @default(cuid())
+  usuarioId String
+  usuario   Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  hashToken String    @unique
+  expiraEn  DateTime
+  usadoEn   DateTime?
+  creadoEn  DateTime  @default(now())
+
+  @@index([usuarioId])
+}
+
+// D-41: BANCO viene del Excel del banco; LISTADO, de una marca "Pagado" del listado (D-44); MANUAL, apuntado a
+// mano (D-46).
+enum OrigenMovimiento {
+  BANCO
+  LISTADO
+  MANUAL
+}
+
+// OTRO_INGRESO: no es de ninguna familia (D-49). CRUZADO: un pago a mano o una marca que resulto ser el mismo
+// dinero que uno del banco; su reparto lo tiene ahora el del banco (D-51).
+enum EstadoMovimiento {
+  CLASIFICADO
+  DUDA
+  OTRO_INGRESO
+  CRUZADO
+}
+
+enum MedioPago {
+  EFECTIVO
+  BIZUM
+  TRANSFERENCIA
+  OTRO
+}
+
+// Por que un movimiento esta en Dudas (D-5).
+enum MotivoDuda {
+  PAGADOR_DESCONOCIDO
+  FAMILIA_SIN_CONFIRMAR
+  NO_CUADRA
+  VARIAS_COMBINACIONES
+  POSIBLE_YA_MARCADO
+  POSIBLE_YA_APUNTADO
+  DESHECHO
+}
+
+// Un ingreso: del banco (solo fecha, nombre de quien paga e importe) o una marca del listado.
+model Movimiento {
+  id               String           @id @default(cuid())
+  grupoId          String
+  grupo            Grupo            @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  origen           OrigenMovimiento
+  // D-45: el Nº mov de Unicaja, que con la fecha y el importe reconoce lo ya importado.
+  numeroBanco      Int?
+  fecha            DateTime?        @db.Date
+  // El nombre de quien paga tal como viene en el banco, o la columna del listado.
+  concepto         String
+  importeCentimos  Int
+  estado           EstadoMovimiento
+  motivoDuda       MotivoDuda?
+  // Clasificado: la familia que paga. En Dudas: la mejor sugerencia, con sus cargos preseleccionados.
+  familiaId        String?
+  familia          Familia?         @relation(fields: [familiaId], references: [id], onDelete: SetNull)
+  cargosSugeridos  String[]         @default([])
+  // Quien lo clasifico; nulo en un movimiento clasificado = lo clasifico la app sola (D-5).
+  clasificadoPorId String?
+  clasificadoPor   Usuario?         @relation("MovimientoClasificadoPor", fields: [clasificadoPorId], references: [id], onDelete: SetNull)
+  clasificadoEn    DateTime?
+  importadoPorId   String?
+  importadoPor     Usuario?         @relation("MovimientoImportadoPor", fields: [importadoPorId], references: [id], onDelete: SetNull)
+  // Pago a mano: como se pago. Otro ingreso: nota corta opcional (D-49).
+  medio            MedioPago?
+  nota             String?
+  // D-51: en un pago a mano o una marca cruzados, el movimiento del banco que es el mismo dinero.
+  cruzadoConId     String?          @unique
+  cruzadoCon       Movimiento?      @relation("Cruce", fields: [cruzadoConId], references: [id], onDelete: SetNull)
+  cruzadoDesde     Movimiento?      @relation("Cruce")
+  creadoEn         DateTime         @default(now())
+
+  asignaciones Asignacion[]
+
+  @@unique([grupoId, numeroBanco, fecha, importeCentimos])
+  @@index([grupoId, estado])
+  @@index([familiaId])
+}
+
+// Que parte de un movimiento paga que cargo. Lo pagado de un cargo es la suma de sus asignaciones.
+model Asignacion {
+  id              String     @id @default(cuid())
+  movimientoId    String
+  movimiento      Movimiento @relation(fields: [movimientoId], references: [id], onDelete: Cascade)
+  // Restrict: un cargo con pagos no se borra (ni su evento, ni el niño, ni su familia).
+  cargoId         String
+  cargo           Cargo      @relation(fields: [cargoId], references: [id], onDelete: Restrict)
+  importeCentimos Int
+
+  @@unique([movimientoId, cargoId])
+  @@index([cargoId])
+}
+
+// D-1: nombre de quien paga (tal como sale en el banco) aprendido para una familia. Se aprende en Dudas (parte 5).
+model Pagador {
+  id        String   @id @default(cuid())
+  grupoId   String
+  grupo     Grupo    @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  familiaId String
+  familia   Familia  @relation(fields: [familiaId], references: [id], onDelete: Cascade)
+  // Palabras normalizadas y ordenadas: "GIL FERRER LUIS" reconoce tambien "LUIS GIL FERRER".
+  clave     String
+  nombre    String
+  creadoEn  DateTime @default(now())
+
+  @@unique([grupoId, clave])
+  @@index([familiaId])
+}

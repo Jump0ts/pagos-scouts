@@ -1,0 +1,245 @@
+name: CI
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: scouts
+          POSTGRES_PASSWORD: scouts
+          POSTGRES_DB: scouts_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U scouts"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://scouts:scouts@localhost:5432/scouts_test
+      TEST_DATABASE_URL: postgresql://scouts:scouts@localhost:5432/scouts_test
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - run: npm ci
+        working-directory: .
+
+      - run: npx prisma generate
+
+      - run: npx prisma migrate deploy
+
+      - run: npm run lint
+
+      - run: npm run typecheck
+
+      - run: npm run build
+
+      - run: npm run test
+
+      - name: Coverage summary
+        if: always()
+        run: cat coverage/coverage-summary.json >> "$GITHUB_STEP_SUMMARY" || true
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: backend-coverage
+          path: backend/coverage
+
+  web:
+    name: Web
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - run: npm ci
+        working-directory: .
+
+      - run: npm run lint
+
+      - run: npm run typecheck
+
+      - run: npm run test
+
+      - run: npm run build
+
+      - name: La web no lleva scripts en linea (la CSP no permite 'unsafe-inline')
+        run: |
+          if grep -Eq '<script(>| [^>]*>[^<])' dist/index.html; then
+            echo "::error::dist/index.html tiene un script en linea"; exit 1
+          fi
+
+      - name: Coverage summary
+        if: always()
+        run: cat coverage/coverage-summary.json >> "$GITHUB_STEP_SUMMARY" || true
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: web-coverage
+          path: apps/web/coverage
+
+  docker:
+    name: Imagen (API + web)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Construir la imagen
+        run: docker build -f backend/Dockerfile -t pagos-scouts:ci .
+
+      - name: No lleva secretos, datos ni ficheros sobrantes
+        run: |
+          docker run --rm --entrypoint sh pagos-scouts:ci -c '
+            set -e
+            test -f /opt/deploy/web/index.html
+            test -f /opt/deploy/web-nginx/nginx.conf
+            # Lo que el servidor de produccion extrae de la imagen (D-60), ejecutable; la guia y el arranque no.
+            test -x /opt/deploy/deploy.sh && test -x /opt/deploy/backup/backup.sh && test -x /opt/deploy/bin/ssh-entry.sh
+            test -f /opt/deploy/docker-compose.yml
+            if [ -e /opt/deploy/README.md ] || [ -e /opt/deploy/servidor ]; then echo "La imagen lleva ficheros de despliegue que no debe"; exit 1; fi
+            SOBRANTES=$(find /app /opt/deploy \( -name ".env" -o -name ".env.*" -o -name "*.pem" -o -name "*.key" \
+                -o -name "*.xls" -o -name "*.xlsx" -o -name "*.csv" \) | grep -v "/node_modules/" || true)
+            if [ -n "$SOBRANTES" ]; then echo "La imagen lleva ficheros que no debe: $SOBRANTES"; exit 1; fi
+            if [ -d /app/backend/tests ]; then echo "La imagen lleva los tests"; exit 1; fi
+          '
+
+      - name: Arrancar base de datos, API y web con las restricciones de produccion
+        run: |
+          RESTRINGIDO="--read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges:true"
+          docker network create ci
+          docker run -d --name db --network ci \
+            -e POSTGRES_USER=scouts -e POSTGRES_PASSWORD=scouts -e POSTGRES_DB=scouts postgres:16-alpine
+          for i in $(seq 1 30); do docker exec db pg_isready -U scouts >/dev/null 2>&1 && break; sleep 1; done
+
+          # shellcheck disable=SC2086
+          docker run -d --name api --network ci $RESTRINGIDO \
+            -e NODE_ENV=production -e DATABASE_URL=postgresql://scouts:scouts@db:5432/scouts \
+            -e PUBLIC_URL=https://scouts.example.test \
+            pagos-scouts:ci
+          # La imagen aplica sus propias migraciones con la CLI de Prisma que lleva dentro.
+          docker run --rm --network ci -e DATABASE_URL=postgresql://scouts:scouts@db:5432/scouts \
+            pagos-scouts:ci npx --no-install prisma migrate deploy
+          for i in $(seq 1 30); do
+            STATUS=$(docker inspect -f '{{.State.Health.Status}}' api)
+            [ "$STATUS" = healthy ] && break
+            sleep 2
+          done
+          echo "api: $STATUS"
+          [ "$STATUS" = healthy ] || { docker logs api; exit 1; }
+
+          # La web se sirve desde los ficheros de la propia imagen, igual que en los entornos reales.
+          CID=$(docker create pagos-scouts:ci)
+          docker cp "$CID:/opt/deploy/web" "$RUNNER_TEMP/web"
+          docker rm "$CID"
+          # shellcheck disable=SC2086
+          docker run -d --name web --network ci -p 8081:8080 --user 101:101 $RESTRINGIDO \
+            -v "$PWD/deploy/web-nginx/nginx.conf:/etc/nginx/nginx.conf:ro" \
+            -v "$RUNNER_TEMP/web:/usr/share/nginx/html:ro" \
+            nginx:1.31-alpine
+          for i in $(seq 1 15); do curl -fsS http://localhost:8081/healthz >/dev/null && break; sleep 1; done
+
+      - name: Comprobaciones de la web y del paso a la API
+        run: |
+          code() { curl -s -o /dev/null -w '%{http_code}' "$@"; }
+          [ "$(code http://localhost:8081/healthz)" = 200 ]
+          [ "$(code http://localhost:8081/)" = 200 ]
+          [ "$(code http://localhost:8081/eventos/123)" = 200 ]          # ruta de la web -> index.html
+          [ "$(code http://localhost:8081/assets/no-existe.js)" = 404 ]  # fichero estatico inexistente
+          [ "$(code http://localhost:8081/.env)" = 404 ]
+          [ "$(code -X POST http://localhost:8081/)" = 403 ]
+          [ "$(code http://localhost:8081/api/no-existe)" = 404 ]
+
+          # La web llega a la API y la API a la base de datos.
+          curl -fsS http://localhost:8081/api/health | tee /dev/stderr | grep -q '"db":"ok"'
+
+          # Sin sesion no hay datos, y una peticion desde otro dominio se rechaza.
+          [ "$(code http://localhost:8081/api/secciones)" = 401 ]
+          [ "$(code -X POST -H 'Origin: https://otro.example' -H 'Content-Type: application/json' -d '{}' http://localhost:8081/api/auth/login)" = 403 ]
+
+          # Ningun contenedor corre como root.
+          [ "$(docker exec api id -u)" != "0" ] || { echo "la API corre como root"; exit 1; }
+          [ "$(docker exec web id -u)" != "0" ] || { echo "la web corre como root"; exit 1; }
+
+          # Cada cabecera de seguridad de la web sale UNA vez.
+          HEADERS=$(curl -sI http://localhost:8081/ | tr -d '\r')
+          for H in content-security-policy x-content-type-options x-frame-options referrer-policy \
+                   cross-origin-opener-policy permissions-policy strict-transport-security cache-control; do
+            [ "$(grep -ic "^$H:" <<<"$HEADERS")" = "1" ] || { echo "cabecera $H ausente o duplicada"; echo "$HEADERS"; exit 1; }
+          done
+          if grep -qi "unsafe-inline\|unsafe-eval" <<<"$HEADERS"; then echo "la CSP permite codigo en linea"; exit 1; fi
+          if grep -qi '^server: nginx/' <<<"$HEADERS"; then echo "nginx anuncia su version"; exit 1; fi
+
+          # Las respuestas de la API: sin cache, sin duplicados y sin anunciar Express.
+          API_HEADERS=$(curl -sI http://localhost:8081/api/health | tr -d '\r')
+          grep -qi '^cache-control: no-store' <<<"$API_HEADERS"
+          [ "$(grep -ic '^x-content-type-options:' <<<"$API_HEADERS")" = "1" ]
+          if grep -qi '^x-powered-by:' <<<"$API_HEADERS"; then echo "la API anuncia Express"; exit 1; fi
+
+          # Los ficheros con hash se cachean para siempre.
+          JS=$(cd "$RUNNER_TEMP/web" && find assets -name '*.js' | head -1)
+          curl -sI "http://localhost:8081/$JS" | grep -qi '^cache-control:.*immutable'
+
+      - name: Logs si algo falla
+        if: failure()
+        run: |
+          docker logs api || true
+          docker logs web || true
+
+  despliegue:
+    name: Scripts de despliegue
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: shellcheck
+        run: shellcheck --severity=warning deploy/prod/*.sh deploy/prod/bin/*.sh deploy/prod/backup/*.sh deploy/prod/servidor/*.sh
+
+      - name: Pruebas de los scripts (docker y age simulados)
+        run: bash deploy/prod/prod.test.sh
+
+      - name: El compose de produccion es valido
+        run: |
+          printf '%s\n' DOMAIN=scouts.ejemplo.test POSTGRES_USER=a POSTGRES_PASSWORD=b POSTGRES_DB=c > "$RUNNER_TEMP/env"
+          docker compose -f deploy/prod/docker-compose.yml --env-file "$RUNNER_TEMP/env" config -q
+
+      - name: El nginx del servidor es valido
+        run: |
+          sed 's/DOMINIO/scouts.ejemplo.test/' deploy/prod/servidor/scouts.conf > "$RUNNER_TEMP/scouts.conf"
+          docker run --rm \
+            -v "$RUNNER_TEMP/scouts.conf:/etc/nginx/conf.d/default.conf:ro" \
+            -v "$PWD/deploy/prod/servidor/scouts-proxy.conf:/etc/nginx/snippets/scouts-proxy.conf:ro" \
+            nginx:1.31-alpine nginx -t

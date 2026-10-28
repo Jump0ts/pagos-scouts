@@ -1,0 +1,68 @@
+# Dependabot: sus pull requests van a `pre`, siguiendo el flujo de ramas (feature -> pre -> release -> master).
+# Lee este fichero desde la rama por defecto (master).
+version: 2
+updates:
+  # Dependencias JavaScript del monorepo (backend y web comparten el package-lock.json de la raiz)
+  - package-ecosystem: npm
+    directory: "/"
+    target-branch: pre
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # Saltos mayores que tocan toda la validacion o la base de datos: se hacen a proposito y probando a mano.
+      - dependency-name: "zod"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "express"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/express"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "prisma"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@prisma/client"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    target-branch: pre
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(ci)"
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: docker
+    directory: "/backend"
+    target-branch: pre
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: "chore(docker)"
+    ignore:
+      # Node cambia de linea LTS a mano (.nvmrc y CI a la vez); las versiones impares no son LTS.
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: docker-compose
+    directories: ["/deploy/pre"]
+    target-branch: pre
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: "chore(docker)"
+    ignore:
+      # Un salto mayor de Postgres necesita volcar y restaurar los datos: nunca automatico.
+      - dependency-name: "postgres"
+        update-types: ["version-update:semver-major"]

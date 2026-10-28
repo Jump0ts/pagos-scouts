@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+/* Tema de la app (D-7): el de la maqueta elegida. Verde bosque + ámbar, neutros con matiz verde
+   y un color por sección. Todo color de la interfaz sale de aquí. */
+@theme {
+  --font-sans: "Figtree Variable", system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque Variable", "Figtree Variable", system-ui, sans-serif;
+
+  --color-fondo: oklch(0.975 0.006 145);
+  --color-superficie: oklch(1 0 0);
+  --color-hundido: oklch(0.95 0.01 145);
+  --color-tinta: oklch(0.24 0.03 155);
+  --color-suave: oklch(0.52 0.025 150);
+  --color-linea: oklch(0.9 0.012 145);
+  --color-bosque: oklch(0.46 0.1 155);
+  --color-bosque-claro: oklch(0.93 0.04 150);
+  --color-ambar: oklch(0.72 0.15 70);
+  --color-ambar-claro: oklch(0.95 0.05 85);
+  --color-rojo: oklch(0.56 0.19 28);
+  --color-rojo-claro: oklch(0.95 0.03 25);
+  --color-azul: oklch(0.55 0.13 245);
+  --color-azul-claro: oklch(0.95 0.025 245);
+
+  --color-castores: oklch(0.7 0.15 55);
+  --color-manada: oklch(0.8 0.15 90);
+  --color-tropa: oklch(0.62 0.14 150);
+  --color-unidad: oklch(0.5 0.15 15);
+  --color-clan: oklch(0.58 0.2 28);
+  --color-scouters: oklch(0.5 0.15 300);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-fondo: oklch(0.17 0.015 155);
+    --color-superficie: oklch(0.215 0.018 155);
+    --color-hundido: oklch(0.19 0.016 155);
+    --color-tinta: oklch(0.95 0.01 145);
+    --color-suave: oklch(0.72 0.02 150);
+    --color-linea: oklch(0.3 0.018 155);
+    --color-bosque: oklch(0.72 0.13 155);
+    --color-bosque-claro: oklch(0.3 0.05 155);
+    --color-ambar: oklch(0.8 0.14 75);
+    --color-ambar-claro: oklch(0.3 0.05 75);
+    --color-rojo: oklch(0.7 0.17 28);
+    --color-rojo-claro: oklch(0.3 0.06 25);
+    --color-azul: oklch(0.72 0.12 245);
+    --color-azul-claro: oklch(0.3 0.05 245);
+    color-scheme: dark;
+  }
+}
+
+@layer base {
+  body { @apply bg-fondo text-tinta font-sans antialiased; }
+  :focus-visible { @apply outline-2 outline-offset-2 outline-bosque; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+}

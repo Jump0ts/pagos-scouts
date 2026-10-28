@@ -13,6 +13,10 @@ sobre todo, el registro de decisiones en [docs/decisiones.md](docs/decisiones.md
   referencia; las piezas complejas usan Radix Primitives sin estilos (D-7b).
 - **Datos reales nunca en el repo, que es público.** Los tests y los ejemplos usan solo datos inventados en
   `tests/fixtures/`. El `.gitignore` bloquea `*.xls`, `*.xlsx` y `*.csv`; no se fuerza nunca su subida.
+  **Tampoco en comentarios, ejemplos, tests, mensajes de commit ni descripciones de PR:** ni nombres de niños o
+  padres del listado del grupo, ni nombres de pagadores del Excel del banco, ni siquiera solo apellidos o un
+  apellido raro. Para cubrir un caso real (errata, apellido compuesto, diminutivo), se inventa un nombre que lo
+  reproduzca. Antes de cada commit se revisa que no haya ninguno.
 - **Aislamiento por grupo.** Todo dato cuelga de `Grupo` y cada consulta se filtra por el grupo de la sesión, con
   tests que lo comprueban (D-11). Datos de menores: mínimos y solo los necesarios.
 - **Entregas por partes** (ver `docs/01-propuesta-para-debatir.md`, sección 8): cada parte se prueba aislada
