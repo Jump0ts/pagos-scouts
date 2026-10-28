@@ -125,6 +125,10 @@ jobs:
             set -e
             test -f /opt/deploy/web/index.html
             test -f /opt/deploy/web-nginx/nginx.conf
+            # Lo que el servidor de produccion extrae de la imagen (D-60), ejecutable; la guia y el arranque no.
+            test -x /opt/deploy/deploy.sh && test -x /opt/deploy/backup/backup.sh && test -x /opt/deploy/bin/ssh-entry.sh
+            test -f /opt/deploy/docker-compose.yml
+            if [ -e /opt/deploy/README.md ] || [ -e /opt/deploy/servidor ]; then echo "La imagen lleva ficheros de despliegue que no debe"; exit 1; fi
             SOBRANTES=$(find /app /opt/deploy \( -name ".env" -o -name ".env.*" -o -name "*.pem" -o -name "*.key" \
                 -o -name "*.xls" -o -name "*.xlsx" -o -name "*.csv" \) | grep -v "/node_modules/" || true)
             if [ -n "$SOBRANTES" ]; then echo "La imagen lleva ficheros que no debe: $SOBRANTES"; exit 1; fi
@@ -212,3 +216,30 @@ jobs:
         run: |
           docker logs api || true
           docker logs web || true
+
+  despliegue:
+    name: Scripts de despliegue
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: shellcheck
+        run: shellcheck --severity=warning deploy/prod/*.sh deploy/prod/bin/*.sh deploy/prod/backup/*.sh deploy/prod/servidor/*.sh
+
+      - name: Pruebas de los scripts (docker y age simulados)
+        run: bash deploy/prod/prod.test.sh
+
+      - name: El compose de produccion es valido
+        run: |
+          printf '%s\n' DOMAIN=scouts.ejemplo.test POSTGRES_USER=a POSTGRES_PASSWORD=b POSTGRES_DB=c > "$RUNNER_TEMP/env"
+          docker compose -f deploy/prod/docker-compose.yml --env-file "$RUNNER_TEMP/env" config -q
+
+      - name: El nginx del servidor es valido
+        run: |
+          sed 's/DOMINIO/scouts.ejemplo.test/' deploy/prod/servidor/scouts.conf > "$RUNNER_TEMP/scouts.conf"
+          docker run --rm \
+            -v "$RUNNER_TEMP/scouts.conf:/etc/nginx/conf.d/default.conf:ro" \
+            -v "$PWD/deploy/prod/servidor/scouts-proxy.conf:/etc/nginx/snippets/scouts-proxy.conf:ro" \
+            nginx:1.31-alpine nginx -t

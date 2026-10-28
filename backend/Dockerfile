@@ -45,6 +45,9 @@ COPY --from=build /app/backend/prisma backend/prisma
 # La web (se sirve de solo lectura desde el contenedor nginx) y la config de ese nginx. No contienen secretos.
 COPY --from=web /app/apps/web/dist /opt/deploy/web/
 COPY deploy/web-nginx/ /opt/deploy/web-nginx/
+# Lo que el servidor de produccion extrae de esta imagen verificada para desplegarla (D-60): compose, deploy.sh,
+# copias de seguridad y el comando forzado de la CI. Sin secretos.
+COPY deploy/prod/ /opt/deploy/
 
 WORKDIR /app/backend
 # Sin root: si alguien explotara la API no tendria privilegios dentro del contenedor.

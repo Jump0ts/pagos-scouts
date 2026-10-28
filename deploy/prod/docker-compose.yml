@@ -1,0 +1,104 @@
+# Producción en el droplet propio (D-59, D-61). Lo lanza deploy.sh; no se ejecuta a mano. Ver README.md.
+#
+# Seguridad:
+#  - La base de datos y la API viven solo en la red `interna` (sin salida a Internet) y no publican puertos.
+#  - La web publica su puerto solo en 127.0.0.1: al dominio se llega por el nginx del servidor, que pone el TLS.
+#  - Los secretos salen de ~/pagos-scouts/.env.production (modo 600, fuera del repo), nunca de este fichero.
+
+name: pagos-scouts-prod
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      POSTGRES_DB: ${POSTGRES_DB:?}
+    # Ajustado a un droplet de 1 GB.
+    command:
+      - postgres
+      - -c
+      - shared_buffers=64MB
+      - -c
+      - max_connections=20
+      - -c
+      - work_mem=4MB
+      - -c
+      - maintenance_work_mem=32MB
+      - -c
+      - effective_cache_size=192MB
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks: [interna]
+    mem_limit: 256m
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  api:
+    # La imagen la fija deploy.sh por digest (state/image.env); el valor por defecto solo permite que
+    # `docker compose exec db` (copias) interprete el fichero sin una imagen concreta.
+    image: ${API_IMAGE:-pagos-scouts-sin-desplegar}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "4000"
+      DATABASE_URL: postgresql://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@db:5432/${POSTGRES_DB:?}
+      # Con ella se construyen los enlaces de invitación y de restablecer contraseña.
+      PUBLIC_URL: https://${DOMAIN:?}
+    networks: [interna]
+    mem_limit: 256m
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  # nginx de la web (D-12): sirve los ficheros que salen de la misma imagen verificada que la API y pasa /api a la
+  # API. deploy.sh lo recrea en cada despliegue para que lea la web nueva.
+  web:
+    image: nginx:1.31-alpine
+    restart: unless-stopped
+    user: "101:101"
+    volumes:
+      - ./web:/usr/share/nginx/html:ro
+      - ./web-nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks: [interna, publica]
+    ports:
+      - "127.0.0.1:8090:8080"
+    mem_limit: 48m
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+networks:
+  # Sin salida a Internet: ni la base de datos ni la API necesitan (ni deben poder) hablar con el exterior.
+  interna:
+    internal: true
+  # Solo para publicar el puerto de la web en 127.0.0.1 (una red interna no puede publicar puertos).
+  publica: {}
+
+volumes:
+  db_data:

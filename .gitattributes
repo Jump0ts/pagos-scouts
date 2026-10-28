@@ -1,2 +1,6 @@
 # Los scripts de shell se ejecutan en Linux: con CRLF fallan ("bad interpreter").
 *.sh text eol=lf
+
+# Lo que se copia o se ejecuta en servidores Linux va siempre con LF; los scripts de PowerShell, con CRLF.
+deploy/** text eol=lf
+*.ps1 text eol=crlf

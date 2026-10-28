@@ -1,0 +1,190 @@
+name: Desplegar
+
+# Construye la imagen (API + web), la publica en GHCR y la despliega en el droplet de producción (D-60).
+# Seguridad (ver deploy/prod/README.md):
+#  - Las acciones de terceros van fijadas por commit SHA, no por etiqueta.
+#  - Se despliega por digest y solo si la procedencia (attestation) de la imagen se verifica.
+#  - Automático pero con una llave humana: cada push a master construye la imagen y el job de despliegue queda en
+#    pausa hasta que el revisor obligatorio del entorno `production` lo aprueba. El entorno solo admite master.
+#    También se puede lanzar a mano (workflow_dispatch) para volver a una versión anterior.
+#  - La clave SSH de este flujo solo puede ejecutar `deploy <digest> <usuario>` en el servidor.
+#  - Los secretos solo pasan por variables de entorno (nunca interpolados en los scripts) y no se imprimen.
+
+on:
+  push:
+    branches: [master]
+    # Solo cuando cambia algo que entra en la imagen: un cambio de documentación no despliega.
+    paths:
+      - "backend/src/**"
+      - "backend/prisma/**"
+      - "backend/package.json"
+      - "backend/tsconfig*.json"
+      - "backend/Dockerfile"
+      - "apps/web/src/**"
+      - "apps/web/public/**"
+      - "apps/web/index.html"
+      - "apps/web/vite.config.ts"
+      - "apps/web/package.json"
+      - "apps/web/tsconfig*.json"
+      - "deploy/prod/**"
+      - "deploy/web-nginx/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".dockerignore"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Etiqueta a desplegar (sha-1a2b3c4), p. ej. para volver a una versión anterior. Vacío = construir y desplegar este commit de master."
+        required: false
+        default: ""
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  IMAGE_REPO: ghcr.io/jump0ts/pagos-scouts
+
+jobs:
+  build:
+    name: Construir y publicar la imagen
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' && inputs.image_tag == ''
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - id: meta
+        run: echo "tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        id: build-push
+        with:
+          context: .
+          file: backend/Dockerfile
+          push: true
+          provenance: false
+          sbom: false
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          tags: ${{ env.IMAGE_REPO }}:${{ steps.meta.outputs.tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Atestación de procedencia
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-name: ${{ env.IMAGE_REPO }}
+          subject-digest: ${{ steps.build-push.outputs.digest }}
+          push-to-registry: false
+
+  deploy:
+    name: Desplegar en producción
+    needs: build
+    if: >-
+      always() &&
+      github.ref == 'refs/heads/master' &&
+      (needs.build.result == 'success' || inputs.image_tag != '')
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://${{ vars.DOMAIN }}
+    permissions:
+      contents: read
+      packages: read
+      attestations: read
+    env:
+      TAG: ${{ inputs.image_tag || needs.build.outputs.tag }}
+      TARGET: ${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}
+      DOMAIN: ${{ vars.DOMAIN }}
+    steps:
+      - name: Validar etiqueta
+        run: |
+          if [[ ! "$TAG" =~ ^sha-[0-9a-f]{7}$ ]]; then
+            echo "::error::Etiqueta no válida: $TAG"
+            exit 1
+          fi
+
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolver el digest y verificar la procedencia de la imagen
+        id: verify
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          DIGEST=$(docker buildx imagetools inspect "$IMAGE_REPO:$TAG" --format '{{json .Manifest}}' | jq -r .digest)
+          if [[ ! "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "::error::No se pudo resolver un digest válido para $TAG"
+            exit 1
+          fi
+          gh attestation verify "oci://$IMAGE_REPO@$DIGEST" \
+            --repo "$GITHUB_REPOSITORY" \
+            --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/deploy.yml"
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+
+      - name: Preparar SSH
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          umask 077
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Desplegar
+        env:
+          DIGEST: ${{ steps.verify.outputs.digest }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USER: ${{ github.repository_owner }}
+        run: |
+          # El token de GHCR (vida corta) viaja por stdin; el servidor solo acepta esta orden exacta.
+          printf '%s' "$GHCR_TOKEN" | ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            "$TARGET" "deploy $DIGEST $GHCR_USER"
+
+      - name: Borrar la clave SSH del runner
+        if: always()
+        run: rm -f ~/.ssh/deploy_key ~/.ssh/known_hosts
+
+      - name: Comprobación tras el despliegue
+        run: |
+          curl -fsS --retry 10 --retry-delay 3 --retry-all-errors "https://$DOMAIN/api/health" \
+            | tee /dev/stderr | grep -q '"status":"ok"'
+
+  cleanup:
+    name: Limpiar versiones antiguas de la imagen
+    needs: deploy
+    if: needs.deploy.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - uses: actions/delete-package-versions@e5bc658cc4c965c472efe991f8beea3981499c55 # v5
+        with:
+          package-name: pagos-scouts
+          package-type: container
+          min-versions-to-keep: 5

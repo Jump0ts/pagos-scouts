@@ -6,6 +6,10 @@ still change.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-28
+
+First beta, to be tried by the group's team with real data.
+
 ### Added
 - Project proposal and decision log (`docs/`), and the Python prototype that validated the idea (`prototipo/`).
 - **Part 0 — skeleton.** npm workspaces with the API (`backend`: Express, Prisma, Zod, `/api/health` that also
@@ -84,6 +88,14 @@ still change.
   by hand / roster mark). A reminder button builds a text with who still has to pay (first name and initial, no
   amounts) to copy or share in the families' group. The home screen lists the events that are still open or have
   money pending, with their progress.
+
+- **Production deployment.** A dedicated DigitalOcean droplet (Frankfurt) with a one-time setup script (non-root
+  `deploy` user, key-only SSH, firewall, automatic security updates, Docker, nginx and Certbot). Every merge to
+  `master` builds the image, publishes it to GHCR with build provenance, and deploys it by digest after a manual
+  approval; the CI key can only run the deploy command. Each deployment backs up, migrates, and rolls the API back
+  on its own if the new one is not healthy. Nightly database backups are encrypted with `age` (only the public key
+  lives on the server), downloaded to the treasurer's PC with SHA-256 checks, and can be restore-tested from there.
+  Step-by-step guide in `deploy/prod/README.md`.
 
 ### Fixed
 - User-facing API messages now use proper Spanish spelling (contraseña, sesión, sección…).
