@@ -30,6 +30,11 @@ maquetas
 .claude
 .impeccable
 
-# Despliegue: solo la config del nginx de la web
+# Despliegue: la config del nginx de la web y lo que el servidor de produccion saca de la imagen (D-60).
+# Ni la guia, ni el arranque del servidor, ni los scripts del PC.
 deploy/*
 !deploy/web-nginx
+!deploy/prod
+deploy/prod/README.md
+deploy/prod/servidor
+deploy/prod/**/*.ps1

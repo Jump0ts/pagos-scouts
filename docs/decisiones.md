@@ -114,6 +114,16 @@ No se borra la antigua.
 | D-57 | **Eventos abiertos en Inicio** | Inicio muestra los eventos del curso que siguen abiertos o tienen algo pendiente, con su % cobrado y enlace al detalle. Los Scouters ven los de sus secciones, con lo cobrado de esas secciones. |
 | D-58 | **Recordatorio para copiar** | En el detalle del evento, un botón copia (o comparte en el móvil) un texto con quién falta por pagar según los filtros: nombre e inicial del primer apellido (si dos coinciden, apellidos completos), «a medias» si ha pagado parte, y sin importes. Para pegarlo en el grupo de familias; lo pueden usar todos los roles, con su visibilidad. |
 
+## Bloque 10 — Producción y release 0.1.0 (2026-10-28)
+
+| # | Decisión | Detalle |
+|---|---|---|
+| D-59 | **Droplet de 1 GB en Fráncfort, creado por el usuario** | Concreta D-10a. Basic 1 GB / 1 vCPU, Ubuntu 24.04 LTS, región FRA1, acceso solo con clave SSH. El usuario lo crea en el panel de DigitalOcean; Claude prepara `deploy/prod/` con un script de arranque que el usuario lanza una vez como root (usuario `deploy` sin `sudo`, firewall 22/80/443, actualizaciones de seguridad automáticas, Docker, nginx, Certbot y `age`). Claude no toca el servidor ni el DNS. |
+| D-60 | **Despliegue a producción automático con aprobación** | Como My Money: cada merge a `master` que cambie lo desplegable construye la imagen, la publica en GHCR con su atestación de procedencia y el despliegue espera la aprobación del revisor del entorno `production` (solo admite `master`). En el servidor, la clave SSH de la CI solo puede pedir `deploy <digest> <usuario>`; el despliegue hace copia → migraciones → API nueva (vuelve sola a la anterior si no queda sana) → web. Vuelta atrás lanzando el flujo a mano con una etiqueta anterior. `pre` sigue lanzándose a mano en el servidor de casa (D-13). |
+| D-61 | **El nginx del servidor solo termina TLS** | Concreta D-12 en el droplet propio: nginx + Certbot del sistema publican `scouts.josanfersal.dev` y pasan todo al contenedor web (escuchando solo en `127.0.0.1`), con límite de peticiones a `/api/auth/`. Se configura una vez en el arranque; los despliegues no lo tocan. La base de datos y la API viven en una red sin salida a Internet y sin puertos publicados. |
+| D-62 | **Copias diarias cifradas con `age` y bajadas al PC** | Hay datos reales de menores: cada noche `pg_dump` cifrado con la clave pública de `age` (la privada solo está en el PC del usuario), 7 diarias y 4 semanales, otra antes de cada migración. Un script de Windows las baja a diario verificando SHA-256 y avisa si la última tiene más de 36 h. La prueba de restauración se hace en el PC, que es donde se pueden descifrar. |
+| D-63 | **Arranque de producción** | Tras el primer despliegue el usuario lanza `crear-grupo` en el servidor con su email, abre el enlace de invitación, importa el listado real e invita a su equipo desde Ajustes → Personas. La release 0.1.0 (partes 0–6) es la que se prueba con el equipo y datos reales. |
+
 Los importes se guardan en céntimos (enteros), para no tener errores de redondeo.
 
 **Nota sobre ramas:** la parte 1 sale de `pre` y no de `develop`, porque necesita el esqueleto de la parte 0, que aún
