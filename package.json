@@ -1,0 +1,19 @@
+{
+  "name": "pagos-scouts",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "apps/web"
+  ],
+  "scripts": {
+    "backend:dev": "npm run dev --workspace=backend",
+    "web:dev": "npm run dev --workspace=apps/web"
+  },
+  "allowScripts": {
+    "@prisma/client@6.19.3": true,
+    "@prisma/engines@6.19.3": true,
+    "prisma@6.19.3": true,
+    "esbuild@0.25.12": true,
+    "esbuild@0.28.2": true
+  }
+}

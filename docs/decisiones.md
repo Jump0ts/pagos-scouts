@@ -38,6 +38,97 @@ No se borra la antigua.
 | D-12 | **nginx propio delante de la API** | Una sola imagen lleva la API y la web compilada (como en My Money). Un contenedor nginx sin root, de solo lectura y sin capabilities, sirve la web con sus cabeceras de seguridad y pasa `/api` al contenedor de la API. El nginx del servidor solo termina TLS. |
 | D-13 | **Pre lo lanza el usuario** | Claude prepara `deploy/pre/` (compose, `.env.pre.example`, nginx y guía). El usuario crea el DNS y ejecuta los comandos en su servidor; Claude no toca DNS ni servidor. |
 
+## Bloque 4 — Parte 1: grupos, usuarios y secciones (2026-10-27)
+
+| # | Decisión | Detalle |
+|---|---|---|
+| D-14 | **Email y contraseña** | Contraseñas con argon2id. Tras 5 intentos fallidos para un mismo email, espera de 15 minutos. Sin envío de correos. |
+| D-15 | **Altas por enlace de invitación** | Un administrador crea la invitación (email, rol y, para Scouter, sus secciones) y obtiene un enlace de un solo uso que caduca en 7 días. Lo envía él por el medio que quiera. Cada persona elige su propia contraseña. |
+| D-16 | **Roles: Admin, Tesorería y Scouter** | Admin: todo, incluidos usuarios y ajustes. Tesorería: pagos, eventos, educandos, Dudas e importaciones, pero no usuarios. Scouter: solo consulta quién ha pagado y quién no en sus secciones; no ve importes de otras familias ni movimientos del banco. Un usuario puede pertenecer a varios grupos con un rol distinto en cada uno. |
+| D-17 | **Primer grupo por comando en el servidor** | `crear-grupo` crea el grupo con sus secciones por defecto y devuelve la invitación de su primer administrador. No existe ninguna pantalla pública para crear grupos. |
+| D-18 | **React Router** | Enrutado de la web, con rutas protegidas por rol. |
+| D-19 | **TanStack Query** | Datos de la API en la web: caché, estados de carga y error, y refresco tras guardar. |
+| D-20 | **React Hook Form + Zod** | Formularios de la web, validados con Zod, la misma librería que el back. |
+| D-21 | **Restablecer contraseña con un enlace generado por un administrador** | Enlace de un solo uso que caduca en 24 horas. Al usarlo se cierran todas las sesiones de esa persona. Si quien olvida la contraseña es el único administrador, se usa el comando `restablecer` del servidor. |
+
+| D-22 | **Login en una tarjeta centrada** | Logo, nombre y formulario en una tarjeta sobre el fondo del tema. Las pantallas de invitación y de restablecer contraseña usan el mismo estilo. Bajo el formulario se explica que, si se olvida la contraseña, hay que pedir un enlace a un administrador. |
+| D-23 | **Cambio de grupo en la cabecera** | Bajo "Tesorería" se ve siempre el nombre del grupo activo; si el usuario tiene varios, al tocarlo se abre un menú para cambiar (Radix Dropdown Menu). |
+| D-24 | **Ajustes con pestañas** | Una entrada "Ajustes" en la navegación con pestañas Personas · Secciones · Mi cuenta. Quien no es administrador solo ve "Mi cuenta". |
+| D-25 | **Enlaces con Copiar y Compartir** | Las invitaciones y los enlaces de restablecer se muestran con un botón "Copiar" y, donde el navegador lo permite (móvil), "Compartir", que abre el menú del sistema con un mensaje ya escrito. La app nunca envía nada por su cuenta. |
+
+## Bloque 5 — Parte 2: educandos, familias y cursos (2026-10-27)
+
+| # | Decisión | Detalle |
+|---|---|---|
+| D-26 | **Del educando, solo nombre, apellidos y nacimiento** | La fecha de nacimiento es opcional y solo sirve para el 2º hermano (D-4b). Nada de DNI, salud, dirección, fotos ni observaciones libres. |
+| D-27 | **De los responsables, solo el nombre completo** | Es lo que necesita el motor para reconocer al pagador en el Excel del banco. Sin teléfonos ni emails. |
+| D-28 | **Importación del listado en un asistente de 3 pasos** | 1) Subir el Excel y detectar los bloques (cada cabecera repetida es un bloque). 2) Elegir la sección de cada bloque y el curso. 3) Revisar las familias detectadas (uniones por erratas, niños sin responsables, coincidencias con lo que ya existe). Nada se guarda hasta confirmar. |
+| D-29 | **Reimportar reconoce y actualiza** | Los niños y familias que ya existen se reconocen por nombre (tolerando erratas) y solo se actualiza su sección en el curso elegido. En la revisión se muestran los nuevos, los que cambian y los que no aparecen (posibles bajas), sin darlos de baja solos. |
+| D-30 | **Baja y borrado controlado** | "Dar de baja" saca al niño del curso y conserva su historial. Un administrador puede borrar definitivamente a un niño o a una familia, salvo que tenga pagos registrados. El plazo de conservación automático se decidirá cuando existan los pagos. |
+| D-31 | **El asistente de paso de curso, más adelante** | En la parte 2 se crea el curso al importar y se puede cambiar a un niño de sección a mano. El asistente (D-2) llega en una parte posterior, antes de septiembre de 2027. |
+| D-32 | **Pantalla Educandos: lista por secciones y ficha de familia** | Buscador y filtros por sección; al tocar un niño se abre la ficha de su familia (hermanos, responsables y, más adelante, pagadores y pagos). Un scouter solo ve los niños de sus secciones y no abre fichas de familia. |
+| D-33 | **Las columnas de pagos del Excel se ignoran por ahora** | Cuando existan los eventos (parte 3) se podrán leer como pagos ya hechos. |
+
+## Bloque 6 — Parte 3: eventos y cargos (2026-10-27)
+
+| # | Decisión | Detalle |
+|---|---|---|
+| D-34 | **Precio de hermanos opcional y por posición** | Sustituye en parte a D-4/D-4b. Cada evento decide si tiene precio de hermanos. Si lo tiene: el 1º paga el precio de su sección, el 2º un precio fijo y el 3º y siguientes otro (si no se indica, el del 2º), iguales para todas las secciones. Nunca más que el precio de su sección. Solo cuentan los hermanos con cargo en ese mismo evento; el mayor (por fecha de nacimiento o, si falta, por sección) es el 1º. |
+| D-35 | **Ajustes por niño con motivo** | Cada cargo admite un importe ajustado (0 € = exento) con un motivo opcional, o quitarlo del evento. El motivo solo lo ven Admin y Tesorería. Decidido por el usuario frente a la recomendación de no guardar motivos. |
+| D-36 | **Las deudas se ajustan solas** | Altas: en un evento "toda la sección" abierto (hoy ≤ fecha de fin) se crea el cargo. Bajas: los cargos pendientes sin pagos se anulan; los pagados o a medias se quedan. Cambio de sección: se actualiza su precio. Tras cualquier cambio se recalculan las posiciones de hermanos: si se anula el cargo del mayor, el siguiente pasa a pagar el precio completo (desaparece el más barato). |
+| D-37 | **Cambiar precios recalcula los pendientes** | Los cargos sin pagos se recalculan; los ajustados a mano conservan su importe. La app dice cuántos no se han tocado. |
+| D-38 | **El scouter ve estado e importes de sus secciones** | Ve los eventos de sus secciones y, por niño, estado e importes (debido y pagado), pero no los motivos de los ajustes. Decidido por el usuario frente a la recomendación de mostrar solo el estado. |
+| D-39 | **Pantallas: lista con progreso y detalle por sección** | Lista de eventos activos con su barra de cobrado (los pasados, plegados). Detalle con resumen, filtros por estado y sección, y los niños agrupados por sección. Crear y editar en un formulario de una pantalla. |
+| D-40 | **Las marcas "Pagado" del Excel, en la parte 4** | Se importarán como pagos ya hechos cuando exista el modelo de pagos. |
+
+## Bloque 7 — Parte 4: movimientos y clasificación automática (2026-10-27)
+
+| # | Decisión | Detalle |
+|---|---|---|
+| D-41 | **Pestaña Movimientos** | Nueva entrada en la navegación (solo Admin y Tesorería, D-16). Importar el Excel del banco en dos pasos: analizar (resumen: nuevos, ya importados, salidas ignoradas, cuántos se clasificarían solos y cuántos irían a Dudas) y confirmar. El fichero no se guarda. Lista con filtros Dudas / Clasificados y "Deshacer" en los clasificados, que vuelven a Dudas. Los eventos y la ficha de familia muestran lo pagado y lo que está a medias. Resolver las dudas a mano llega en la parte 5. |
+| D-42 | **Las salidas del banco se ignoran** | Los importes negativos (gastos, comisiones, devoluciones) no se guardan; el resumen dice cuántos se han ignorado. Una devolución a una familia (D-5c) se apuntará a mano. |
+| D-43 | **Se cuadra contra todo lo pendiente del curso** | Un pago se intenta cuadrar con los cargos pendientes o a medias de la familia en el curso activo, aunque el evento haya terminado. Cada cargo de la combinación se paga entero (lo que le falta). Si hay más de una combinación posible, va a Dudas (D-5). Los movimientos se procesan por orden de fecha. |
+| D-44 | **Las marcas "Pagado" del listado crean pagos** | Sustituye a D-33 y concreta D-40. Al importar el listado se elige a qué evento corresponde cada columna con marcas; cada "Pagado" crea un pago "marcado en el listado" por lo que le falta al cargo. Si después llega del banco un pago de esa familia que ya no cuadra con nada, va a Dudas avisando de que puede estar ya marcado en el listado. |
+| D-45 | **Un movimiento ya importado se reconoce por su Nº mov** | El Nº mov de Unicaja, junto con la fecha y el importe, identifica cada movimiento: se pueden subir Excel de periodos que se solapen sin duplicar nada. |
+| D-46 | **El pago a mano llega en la parte 5, junto con Dudas** | Adelanta parte de la parte 6. Se apunta fecha, quién paga, importe y cómo se pagó, y en la misma pantalla se elige la familia y a qué deudas va, con el mismo reparto que se usa para resolver una duda. |
+| D-47 | **Un pago a mano no se cuenta dos veces** | Al importar el banco, si ya hay un pago a mano de la misma familia y el mismo importe en fechas cercanas, el del banco va a Dudas con el aviso «¿Ya apuntado a mano?». Nunca se suma dos veces sin que lo decida el usuario. |
+
+## Bloque 8 — Parte 5: Dudas, aprendizaje y pago a mano (2026-10-27)
+
+| # | Decisión | Detalle |
+|---|---|---|
+| D-48 | **Saldo a favor: guardar, ver y aplicar** | Concreta D-5c. Lo que no se reparte de un pago queda como saldo de la familia; la pantalla lo dice antes de guardar. En la ficha de familia se ve el saldo y se puede aplicar a una deuda pendiente (se toma de los pagos más antiguos con sobrante). La propuesta al crear un evento llega más adelante. |
+| D-49 | **«No es de familias»** | Un ingreso que no es de ninguna familia (subvención, donación, reintegro) sale de Dudas con una nota corta opcional y queda en el filtro «Otros ingresos». Se puede deshacer. |
+| D-50 | **Recordar un pagador reintenta sus otras dudas** | Al recordar un pagador (D-1), el motor vuelve a pasar por las otras dudas de ese pagador: las que ahora cuadran sin duda se clasifican solas y la app dice cuántas. Las deshechas a mano no se tocan. |
+| D-51 | **Cruce con pagos a mano y marcas, sin límite de fechas** | Concreta D-47. Al importar, si la familia tiene un pago a mano del mismo importe que no esté ya cruzado con uno del banco, el del banco va a Dudas con «¿Ya apuntado a mano?». En la duda, «Es el mismo pago» cruza los dos: el del banco se queda con el reparto y el apuntado queda ligado a él. Vale también para las marcas del listado. Deshacer lo devuelve todo como estaba. |
+| D-52 | **Un pago, una familia** | Cada pago se reparte entre deudas de una sola familia (D-1). El buscador permite cambiar de familia, pero no mezclar dos. |
+
+## Bloque 9 — Parte 6: consulta y exportación por evento (2026-10-28)
+
+| # | Decisión | Detalle |
+|---|---|---|
+| D-53 | **Exportar a Excel (.xlsx)** | El estado de un evento se descarga como `.xlsx` que genera la API con SheetJS (el mismo que lee los Excel). Importes como números con formato de euros y cabecera fija. El fichero se crea al vuelo y no se guarda. |
+| D-54 | **Se exporta lo filtrado, con resumen** | El Excel lleva lo que se está viendo (filtros de estado y sección): una fila por niño con nombre, apellidos, sección, importe, pagado, pendiente y estado. Arriba, el evento, el curso y el total cobrado y pendiente de esas filas. |
+| D-55 | **Exporta cada uno lo que ve** | Admin y Tesorería exportan todo el evento; un Scouter, solo sus secciones (D-16), igual que en pantalla. El motivo de un ajuste nunca va en el Excel (D-35). |
+| D-56 | **Pagos de cada niño en el evento** | En el detalle del evento, Admin y Tesorería pueden tocar a un niño y ver qué pagos cubren su cargo: fecha, quién pagó, cómo (banco, a mano con su medio o marca del listado) e importe. Los Scouters no lo ven. |
+| D-57 | **Eventos abiertos en Inicio** | Inicio muestra los eventos del curso que siguen abiertos o tienen algo pendiente, con su % cobrado y enlace al detalle. Los Scouters ven los de sus secciones, con lo cobrado de esas secciones. |
+| D-58 | **Recordatorio para copiar** | En el detalle del evento, un botón copia (o comparte en el móvil) un texto con quién falta por pagar según los filtros: nombre e inicial del primer apellido (si dos coinciden, apellidos completos), «a medias» si ha pagado parte, y sin importes. Para pegarlo en el grupo de familias; lo pueden usar todos los roles, con su visibilidad. |
+
+## Bloque 10 — Producción y release 0.1.0 (2026-10-28)
+
+| # | Decisión | Detalle |
+|---|---|---|
+| D-59 | **Droplet de 1 GB en Fráncfort, creado por el usuario** | Concreta D-10a. Basic 1 GB / 1 vCPU, Ubuntu 24.04 LTS, región FRA1, acceso solo con clave SSH. El usuario lo crea en el panel de DigitalOcean; Claude prepara `deploy/prod/` con un script de arranque que el usuario lanza una vez como root (usuario `deploy` sin `sudo`, firewall 22/80/443, actualizaciones de seguridad automáticas, Docker, nginx, Certbot y `age`). Claude no toca el servidor ni el DNS. |
+| D-60 | **Despliegue a producción automático con aprobación** | Como My Money: cada merge a `master` que cambie lo desplegable construye la imagen, la publica en GHCR con su atestación de procedencia y el despliegue espera la aprobación del revisor del entorno `production` (solo admite `master`). En el servidor, la clave SSH de la CI solo puede pedir `deploy <digest> <usuario>`; el despliegue hace copia → migraciones → API nueva (vuelve sola a la anterior si no queda sana) → web. Vuelta atrás lanzando el flujo a mano con una etiqueta anterior. `pre` sigue lanzándose a mano en el servidor de casa (D-13). |
+| D-61 | **El nginx del servidor solo termina TLS** | Concreta D-12 en el droplet propio: nginx + Certbot del sistema publican `scouts.josanfersal.dev` y pasan todo al contenedor web (escuchando solo en `127.0.0.1`), con límite de peticiones a `/api/auth/`. Se configura una vez en el arranque; los despliegues no lo tocan. La base de datos y la API viven en una red sin salida a Internet y sin puertos publicados. |
+| D-62 | **Copias diarias cifradas con `age` y bajadas al PC** | Hay datos reales de menores: cada noche `pg_dump` cifrado con la clave pública de `age` (la privada solo está en el PC del usuario), 7 diarias y 4 semanales, otra antes de cada migración. Un script de Windows las baja a diario verificando SHA-256 y avisa si la última tiene más de 36 h. La prueba de restauración se hace en el PC, que es donde se pueden descifrar. |
+| D-63 | **Arranque de producción** | Tras el primer despliegue el usuario lanza `crear-grupo` en el servidor con su email, abre el enlace de invitación, importa el listado real e invita a su equipo desde Ajustes → Personas. La release 0.1.0 (partes 0–6) es la que se prueba con el equipo y datos reales. |
+
+Los importes se guardan en céntimos (enteros), para no tener errores de redondeo.
+
+**Nota sobre ramas:** la parte 1 sale de `pre` y no de `develop`, porque necesita el esqueleto de la parte 0, que aún
+no ha llegado a `develop` (solo llega al cerrar la release).
+
 ## Consecuencias del bloque 1 en el modelo de datos
 
 - `Educando.fechaNacimiento` (opcional), necesaria para D-4b.
