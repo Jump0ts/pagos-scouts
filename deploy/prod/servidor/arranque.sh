@@ -92,6 +92,8 @@ ufw --force enable
 
 log "nginx"
 install -m 644 "$AQUI/scouts-proxy.conf" /etc/nginx/snippets/scouts-proxy.conf
+# Sin versión de nginx en ninguna respuesta, también en el bloque de redirección que añade Certbot.
+echo 'server_tokens off;' >/etc/nginx/conf.d/pagos-scouts.conf
 sed "s/DOMINIO/$DOMINIO/" "$AQUI/scouts.conf" >/etc/nginx/sites-available/scouts.conf
 ln -sf /etc/nginx/sites-available/scouts.conf /etc/nginx/sites-enabled/scouts.conf
 rm -f /etc/nginx/sites-enabled/default
