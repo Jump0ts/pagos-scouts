@@ -37,12 +37,12 @@ export const EnlaceCompartible = ({ enlace, mensaje, caducidad }: Props) => {
       />
       <p className="text-sm text-suave">{caducidad}</p>
       <div className="flex flex-col gap-2 sm:flex-row">
-        <Boton variante={sePuedeCompartir(datos) ? "secundario" : "primario"} onClick={copiar} className="flex-1">
+        <Boton variante={sePuedeCompartir(datos) ? "secundario" : "primario"} onClick={copiar} className="sm:flex-1">
           {copiado ? <Check className="size-4" aria-hidden /> : <Copy className="size-4" aria-hidden />}
           {copiado ? "Copiado" : "Copiar enlace"}
         </Boton>
         {sePuedeCompartir(datos) && (
-          <Boton onClick={compartir} className="flex-1">
+          <Boton onClick={compartir} className="sm:flex-1">
             <Share2 className="size-4" aria-hidden /> Compartir
           </Boton>
         )}

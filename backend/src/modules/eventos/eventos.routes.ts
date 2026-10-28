@@ -9,7 +9,8 @@ import { cursoActivo } from "../cursos/cursos.utils.js";
 import { comprobarSeccionesDelGrupo } from "../secciones/secciones.utils.js";
 import { sincronizarCargos } from "./cargos.sincronizar.js";
 import { estadoDe, importeDe as importe, pagadoPorCargo } from "./cargos.utils.js";
-import { ajustarCargoSchema, anadirNinosSchema, crearEventoSchema, editarEventoSchema } from "./eventos.schema.js";
+import { excelDeEvento } from "./eventos.exportar.js";
+import { ajustarCargoSchema, anadirNinosSchema, crearEventoSchema, editarEventoSchema, exportarSchema } from "./eventos.schema.js";
 
 export const eventosRouter = Router();
 const gestion = requiereRol("ADMIN", "TESORERIA");
@@ -128,40 +129,80 @@ eventosRouter.post(
   }),
 );
 
+// El detalle de un evento tal como lo ve quien pregunta: un scouter, solo sus secciones (D-38).
+const detalleDe = async (req: Request) => {
+  const evento = await eventoDelGrupo(req.params.id, req.grupo!.id);
+  const visibles = seccionesVisibles(req);
+  if (visibles && !evento.precios.some((p) => visibles.has(p.seccionId))) throw notFound("Evento no encontrado");
+
+  const cargos = await prisma.cargo.findMany({
+    where: { eventoId: evento.id, ...(visibles && { seccionId: { in: [...visibles] } }) },
+    orderBy: [{ educando: { nombre: "asc" } }, { educando: { apellidos: "asc" } }],
+    include: { educando: { select: { id: true, nombre: true, apellidos: true } } },
+  });
+  const pagados = await pagadoPorCargo(cargos.map((c) => c.id));
+  const activos = cargos
+    .filter((c) => c.estado === "ACTIVO")
+    .map((c) => {
+      const pagado = pagados.get(c.id) ?? 0;
+      return { cargo: c, importe: importe(c), pagado, estado: estadoDe(importe(c), pagado) };
+    });
+  return { evento, esScouter: Boolean(visibles), resumen: resumenDe(cargos, pagados), excluidos: cargos.filter((c) => c.estado === "EXCLUIDO").length, activos };
+};
+
 eventosRouter.get(
   "/:id",
   asyncHandler(async (req, res) => {
-    const evento = await eventoDelGrupo(req.params.id, req.grupo!.id);
-    const visibles = seccionesVisibles(req);
-    if (visibles && !evento.precios.some((p) => visibles.has(p.seccionId))) throw notFound("Evento no encontrado");
-
-    const cargos = await prisma.cargo.findMany({
-      where: { eventoId: evento.id, ...(visibles && { seccionId: { in: [...visibles] } }) },
-      orderBy: [{ educando: { nombre: "asc" } }, { educando: { apellidos: "asc" } }],
-      include: { educando: { select: { id: true, nombre: true, apellidos: true } } },
-    });
-    const esScouter = Boolean(visibles);
-    const pagados = await pagadoPorCargo(cargos.map((c) => c.id));
+    const { evento, esScouter, resumen, excluidos, activos } = await detalleDe(req);
     res.json({
       evento: vistaEvento(evento),
-      resumen: resumenDe(cargos, pagados),
-      excluidos: cargos.filter((c) => c.estado === "EXCLUIDO").length,
-      cargos: cargos
-        .filter((c) => c.estado === "ACTIVO")
-        .map((c) => ({
-          id: c.id,
-          educando: c.educando,
-          seccionId: c.seccionId,
-          importeCentimos: importe(c),
-          importeCalculadoCentimos: c.importeCalculadoCentimos,
-          ajustado: c.importeAjustadoCentimos !== null,
-          // D-35: el motivo solo para Admin y Tesoreria.
-          ...(esScouter ? {} : { motivoAjuste: c.motivoAjuste }),
-          posicionHermano: c.posicionHermano,
-          pagadoCentimos: pagados.get(c.id) ?? 0,
-          estado: estadoDe(importe(c), pagados.get(c.id) ?? 0),
-        })),
+      resumen,
+      excluidos,
+      cargos: activos.map(({ cargo: c, importe: debido, pagado, estado }) => ({
+        id: c.id,
+        educando: c.educando,
+        seccionId: c.seccionId,
+        importeCentimos: debido,
+        importeCalculadoCentimos: c.importeCalculadoCentimos,
+        ajustado: c.importeAjustadoCentimos !== null,
+        // D-35: el motivo solo para Admin y Tesoreria.
+        ...(esScouter ? {} : { motivoAjuste: c.motivoAjuste }),
+        posicionHermano: c.posicionHermano,
+        pagadoCentimos: pagado,
+        estado,
+      })),
     });
+  }),
+);
+
+// D-53, D-54 y D-55: el Excel con lo que se ve (filtros de estado y seccion), sin el motivo de los ajustes.
+eventosRouter.get(
+  "/:id/exportar",
+  asyncHandler(async (req, res) => {
+    const filtros = validar(exportarSchema, req.query);
+    const { evento, activos } = await detalleDe(req);
+    const [curso, secciones] = await Promise.all([
+      prisma.curso.findUniqueOrThrow({ where: { id: evento.cursoId }, select: { nombre: true } }),
+      prisma.seccion.findMany({ where: { id: { in: evento.precios.map((p) => p.seccionId) } }, orderBy: { orden: "asc" } }),
+    ]);
+    const orden = new Map(secciones.map((s, i) => [s.id, i]));
+    const filas = activos
+      .filter((f) => (!filtros.estado || f.estado === filtros.estado) && (!filtros.seccionId || f.cargo.seccionId === filtros.seccionId))
+      .sort((a, b) => (orden.get(a.cargo.seccionId) ?? 0) - (orden.get(b.cargo.seccionId) ?? 0))
+      .map((f) => ({
+        nombre: f.cargo.educando.nombre,
+        apellidos: f.cargo.educando.apellidos,
+        seccion: secciones.find((s) => s.id === f.cargo.seccionId)?.nombre ?? "",
+        importeCentimos: f.importe,
+        pagadoCentimos: Math.min(f.pagado, f.importe),
+        estado: f.estado,
+      }));
+    const seccion = secciones.find((s) => s.id === filtros.seccionId)?.nombre;
+    const contenido = excelDeEvento({ evento: evento.nombre, curso: curso.nombre, seccion, estado: filtros.estado, filas });
+    res
+      .type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+      .attachment(`${[evento.nombre, seccion].filter(Boolean).join(" - ")}.xlsx`)
+      .send(contenido);
   }),
 );
 
@@ -243,6 +284,33 @@ const cargoDelEvento = async (cargoId: string, eventoId: string) => {
   if (!cargo) throw notFound("Cargo no encontrado");
   return cargo;
 };
+
+// D-56: que pagos cubren el cargo de un niño. Solo Admin y Tesoreria.
+eventosRouter.get(
+  "/:id/cargos/:cargoId/pagos",
+  gestion,
+  asyncHandler(async (req, res) => {
+    const evento = await eventoDelGrupo(req.params.id, req.grupo!.id);
+    const cargo = await cargoDelEvento(req.params.cargoId, evento.id);
+    const asignaciones = await prisma.asignacion.findMany({
+      where: { cargoId: cargo.id },
+      include: { movimiento: { include: { cruzadoDesde: { select: { origen: true, medio: true } } } } },
+      orderBy: [{ movimiento: { fecha: "asc" } }, { movimiento: { creadoEn: "asc" } }],
+    });
+    res.json({
+      pagos: asignaciones.map(({ movimiento: m, importeCentimos }) => ({
+        movimientoId: m.id,
+        origen: m.origen,
+        fecha: m.fecha ? aTexto(m.fecha) : null,
+        concepto: m.concepto,
+        medio: m.medio,
+        importeCentimos,
+        // D-51: un pago del banco que es el mismo dinero que uno apuntado a mano o marcado en el listado.
+        cruce: m.cruzadoDesde,
+      })),
+    });
+  }),
+);
 
 // D-35: importe ajustado a mano (null = volver al calculado) con su motivo.
 eventosRouter.patch(

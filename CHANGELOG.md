@@ -77,6 +77,15 @@ still change.
   nothing is counted twice; undoing restores everything. The home screen shows how many doubts are waiting, and the
   family sheet shows its balance and learned payers (which can be forgotten).
 
+- **Part 6 — consulting and exporting events.** Each event can be downloaded as an Excel file (.xlsx) with exactly
+  what is on screen (status and section filters): a summary of collected and pending money, and one row per child
+  with their section, amount, paid, pending and status. Scouters export only their sections, and adjustment reasons
+  never leave the app. Admin and Treasury can tap a child to see which payments cover their charge (date, payer, bank /
+  by hand / roster mark). A reminder button builds a text with who still has to pay (first name and initial, no
+  amounts) to copy or share in the families' group. The home screen lists the events that are still open or have
+  money pending, with their progress.
+
 ### Fixed
 - User-facing API messages now use proper Spanish spelling (contraseña, sesión, sección…).
 - The development proxy keeps the `Host` header, so the CSRF origin check behaves as it does behind nginx.
+- Copy and Share buttons in dialogs no longer collapse on phones.

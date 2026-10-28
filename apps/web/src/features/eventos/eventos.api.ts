@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/utils/api";
-import type { DatosEvento, DetalleEvento, EventoConResumen, TipoEvento } from "./eventos.types";
+import type { DatosEvento, DetalleEvento, EventoConResumen, PagoDeCargo, TipoEvento } from "./eventos.types";
 
 export const CLAVE_EVENTOS = ["eventos"] as const;
 const claveEvento = (id: string) => ["evento", id] as const;
@@ -13,6 +13,13 @@ export const useEventos = () =>
 
 export const useEvento = (id: string) =>
   useQuery({ queryKey: claveEvento(id), queryFn: () => api<DetalleEvento>(`/eventos/${id}`), enabled: Boolean(id) });
+
+export const usePagosDeCargo = (eventoId: string, cargoId: string | null) =>
+  useQuery({
+    queryKey: ["evento", eventoId, "pagos", cargoId],
+    queryFn: () => api<{ pagos: PagoDeCargo[] }>(`/eventos/${eventoId}/cargos/${cargoId}/pagos`),
+    enabled: Boolean(cargoId),
+  });
 
 const useRefrescar = () => {
   const queryClient = useQueryClient();

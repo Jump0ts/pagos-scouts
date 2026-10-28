@@ -60,3 +60,9 @@ export const ajustarCargoSchema = z.object({
 });
 
 export const anadirNinosSchema = z.object({ educandoIds: z.array(z.string().min(1)).min(1, "Elige al menos un niño") });
+
+// D-54: los mismos filtros que en pantalla.
+export const exportarSchema = z.object({
+  estado: z.enum(["PENDIENTE", "PARCIAL", "PAGADO", "EXENTO"]).optional(),
+  seccionId: z.string().min(1).optional(),
+});

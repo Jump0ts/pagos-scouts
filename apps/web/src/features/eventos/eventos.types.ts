@@ -1,3 +1,5 @@
+import type { MedioPago } from "@/features/movimientos/movimientos.types";
+
 export type TipoEvento = "TODA_SECCION" | "CON_APUNTADOS";
 export type EstadoCargo = "PENDIENTE" | "PARCIAL" | "PAGADO" | "EXENTO";
 
@@ -41,4 +43,15 @@ export type DatosEvento = {
   descuentoHermanos: boolean;
   precioSegundoCentimos: number | null;
   precioTerceroCentimos: number | null;
+};
+
+// D-56: un pago que cubre (parte de) un cargo.
+export type PagoDeCargo = {
+  movimientoId: string;
+  origen: "BANCO" | "LISTADO" | "MANUAL";
+  fecha: string | null;
+  concepto: string;
+  medio: MedioPago | null;
+  importeCentimos: number;
+  cruce: { origen: "LISTADO" | "MANUAL"; medio: MedioPago | null } | null;
 };

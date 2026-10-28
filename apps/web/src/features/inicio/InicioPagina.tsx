@@ -2,6 +2,9 @@ import { ChevronRight, Inbox } from "lucide-react";
 import { Link } from "react-router";
 import { ETIQUETA_ROL } from "@/features/auth/auth.constants";
 import { usePerfil } from "@/features/auth/useSesion";
+import { useEventos } from "@/features/eventos/eventos.api";
+import { enSeguimiento } from "@/features/eventos/eventos.utils";
+import { TarjetaEvento } from "@/features/eventos/TarjetaEvento";
 import { EstadoSistema } from "@/features/health/EstadoSistema";
 import { useMovimientos } from "@/features/movimientos/movimientos.api";
 
@@ -31,6 +34,32 @@ const TarjetaDudas = () => {
   );
 };
 
+// D-57: los eventos abiertos o con algo pendiente; un scouter, los de sus secciones con lo cobrado en ellas.
+const EventosEnCurso = () => {
+  const { data } = useEventos();
+  const eventos = (data?.eventos ?? []).filter(enSeguimiento);
+  if (!eventos.length) return null;
+  return (
+    <section aria-labelledby="inicio-eventos" className="flex flex-col gap-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 id="inicio-eventos" className="text-xs font-bold tracking-[.12em] text-suave uppercase">
+          Eventos en marcha
+        </h2>
+        <Link to="/eventos" className="text-sm font-semibold text-bosque hover:underline">
+          Ver todos
+        </Link>
+      </div>
+      <ul className="grid gap-3 md:grid-cols-2">
+        {eventos.map((e) => (
+          <li key={e.id}>
+            <TarjetaEvento evento={e} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+};
+
 export const InicioPagina = () => {
   const { usuario, grupoActivo } = usePerfil();
   const nombrePila = usuario.nombre.split(/\s+/)[0];
@@ -48,6 +77,8 @@ export const InicioPagina = () => {
       </div>
 
       {gestiona && <TarjetaDudas />}
+
+      <EventosEnCurso />
 
       <EstadoSistema />
     </div>
