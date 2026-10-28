@@ -233,14 +233,13 @@ jobs:
 
       - name: El compose de produccion es valido
         run: |
-          printf 'DOMAIN=scouts.ejemplo.test
-POSTGRES_USER=a
-POSTGRES_PASSWORD=b
-POSTGRES_DB=c
-' > "$RUNNER_TEMP/env"
+          printf '%s\n' DOMAIN=scouts.ejemplo.test POSTGRES_USER=a POSTGRES_PASSWORD=b POSTGRES_DB=c > "$RUNNER_TEMP/env"
           docker compose -f deploy/prod/docker-compose.yml --env-file "$RUNNER_TEMP/env" config -q
 
       - name: El nginx del servidor es valido
         run: |
           sed 's/DOMINIO/scouts.ejemplo.test/' deploy/prod/servidor/scouts.conf > "$RUNNER_TEMP/scouts.conf"
-          docker run --rm             -v "$RUNNER_TEMP/scouts.conf:/etc/nginx/conf.d/default.conf:ro"             -v "$PWD/deploy/prod/servidor/scouts-proxy.conf:/etc/nginx/snippets/scouts-proxy.conf:ro"             nginx:1.31-alpine nginx -t
+          docker run --rm \
+            -v "$RUNNER_TEMP/scouts.conf:/etc/nginx/conf.d/default.conf:ro" \
+            -v "$PWD/deploy/prod/servidor/scouts-proxy.conf:/etc/nginx/snippets/scouts-proxy.conf:ro" \
+            nginx:1.31-alpine nginx -t
