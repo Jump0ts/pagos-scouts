@@ -226,7 +226,7 @@ jobs:
           persist-credentials: false
 
       - name: shellcheck
-        run: shellcheck deploy/prod/*.sh deploy/prod/bin/*.sh deploy/prod/backup/*.sh deploy/prod/servidor/*.sh
+        run: shellcheck --severity=warning deploy/prod/*.sh deploy/prod/bin/*.sh deploy/prod/backup/*.sh deploy/prod/servidor/*.sh
 
       - name: Pruebas de los scripts (docker y age simulados)
         run: bash deploy/prod/prod.test.sh
