@@ -71,6 +71,8 @@ New-Item -ItemType Directory -Force $env:USERPROFILE\.age | Out-Null
 age-keygen -o $env:USERPROFILE\.age\pagos-scouts.txt
 ```
 
+- Son órdenes de PowerShell: en `cmd`, `$env:USERPROFILE` no se expande (usa `%USERPROFILE%`) y la clave de age
+  acabaría en otra ruta. Comprueba que existe `%USERPROFILE%\.age\pagos-scouts.txt`.
 - Pon contraseña a la clave de administración.
 - `age-keygen` imprime la clave **pública** (`age1…`); también está en la primera línea del fichero. La necesitas en 3.6.
 - Guarda una copia de `pagos-scouts.txt` en tu gestor de contraseñas: **si se pierde, las copias no sirven**.
@@ -218,11 +220,12 @@ Host pagos-scouts
 ```
 
 La descarga diaria (la clave de administración tiene contraseña: cárgala en el agente de OpenSSH de Windows, o la tarea
-no podrá usarla):
+no podrá usarla). Desde `cmd`; las comillas escapadas (`\"`) hacen falta porque la ruta tiene un espacio, y las 09:00
+dejan margen tras la copia del servidor (03:15 UTC):
 
-```powershell
-powershell -File deploy\prod\backup\pull-backups.ps1 -Server pagos-scouts
-schtasks /Create /SC DAILY /ST 04:00 /TN "Pagos Scouts copias" /TR "powershell -NoProfile -ExecutionPolicy Bypass -File G:\Desktop\Proyectos\Pagos scouts\deploy\prod\backup\pull-backups.ps1 -Server pagos-scouts"
+```bat
+powershell -NoProfile -ExecutionPolicy Bypass -File "G:\Desktop\Proyectos\Pagos scouts\deploy\prod\backup\pull-backups.ps1" -Server pagos-scouts
+schtasks /Create /SC DAILY /ST 09:00 /TN "Pagos Scouts copias" /TR "powershell -NoProfile -ExecutionPolicy Bypass -File \"G:\Desktop\Proyectos\Pagos scouts\deploy\prod\backup\pull-backups.ps1\" -Server pagos-scouts"
 ```
 
 - Solo añade copias nuevas, verifica cada una con SHA-256 y **nunca** replica los borrados del servidor.
