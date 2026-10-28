@@ -16,7 +16,7 @@ CONTAR="SELECT table_name || '|' || (xpath('/row/c/text()', query_to_xml(format(
 FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY 1;"
 
 CID="$(docker run -d --rm --network none -e POSTGRES_HOST_AUTH_METHOD=trust -e POSTGRES_USER=prueba \
-  -e POSTGRES_DB=prueba --mem-limit 256m postgres:16-alpine)"
+  -e POSTGRES_DB=prueba --memory 256m postgres:16-alpine)"
 trap 'docker stop "$CID" >/dev/null 2>&1 || true' EXIT
 
 for _ in $(seq 1 30); do

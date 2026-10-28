@@ -29,6 +29,11 @@ case "$*" in
     printf '#!/usr/bin/env bash\necho "DEPLOY $1"\n' >"$destino/deploy.sh"
     chmod +x "$destino/deploy.sh" ;;
   *" ps -q db"*) [ -n "${DB_EN_MARCHA:-}" ] && echo dbid ;;
+  # Postgres desechable de la prueba de restauración.
+  "run -d "*) echo pruebaid ;;
+  "exec -i pruebaid "*) cat >/dev/null ;;
+  "exec pruebaid psql "*) printf '%s\n' ${TABLAS_COPIA:-_prisma_migrations|3 grupos|1} ;;
+  *"exec -T db sh -c psql"*) printf '_prisma_migrations|3\ngrupos|2\n' ;;
   *"exec -T db"*) [ -n "${DUMP_ROTO:-}" ] && echo "error: sin conexion" || printf -- '--\n-- PostgreSQL database dump\n--\nSELECT 1;\n' ;;
   *" up "*" api") [ -z "${API_ROTA:-}" ] || { grep -q "$OTRO_DIGEST" "$PAGOS_SCOUTS_BASE/state/image.env" && exit 0; exit 1; } ;;
 esac
@@ -127,6 +132,21 @@ antes=$(ls "$B"/daily | wc -l)
 DUMP_ROTO=1 run_backup >"$T/salida" 2>&1
 codigo=$?
 espera "un volcado sin cabecera falla y no deja fichero" "[ $codigo -ne 0 ] && [ \$(ls '$B'/daily | wc -l) -eq $antes ] && ! ls '$B'/daily/*.partial >/dev/null 2>&1"
+limpiar
+
+echo "restore-test.sh"
+preparar; env_bueno
+run_restore() { printf 'SELECT 1;\n' | gzip | ENV_FILE="$PAGOS_SCOUTS_BASE/.env.production" COMPOSE_FILE="$AQUI/docker-compose.yml" bash "$AQUI/backup/restore-test.sh"; }
+run_restore >"$T/salida" 2>&1
+codigo=$?
+espera "carga la copia en un Postgres desechable y compara las tablas" "[ $codigo -eq 0 ] && grep -q 'OK: la copia se restaura entera' '$T/salida'"
+# Solo flags que existen en `docker run` (--mem-limit es de compose y hacía fallar la prueba en el servidor).
+espera "el Postgres desechable va sin red, con límite de memoria y se borra al parar" \
+  "grep '^docker run -d' '$LLAMADAS' | grep -q -- '--rm --network none' && grep '^docker run -d' '$LLAMADAS' | grep -q -- '--memory 256m' && ! grep -q -- '--mem-limit' '$LLAMADAS'"
+espera "lo para al terminar" "grep -q 'stop pruebaid' '$LLAMADAS'"
+TABLAS_COPIA="grupos|1" run_restore >"$T/salida" 2>&1
+codigo=$?
+espera "falla si la copia no tiene la tabla de migraciones" "[ $codigo -ne 0 ] && grep -q 'tabla de migraciones' '$T/salida'"
 limpiar
 
 echo
