@@ -6,7 +6,7 @@ set -uo pipefail
 AQUI="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FALLOS=0
 ok() { echo "  ok - $1"; }
-mal() { echo "  MAL - $1"; FALLOS=$((FALLOS + 1)); }
+mal() { echo "  MAL - $1"; FALLOS=$((FALLOS + 1)); [ -f "${T:-}/salida" ] && tail -n 5 "$T/salida" | sed "s/^/      /"; }
 espera() { if eval "$2"; then ok "$1"; else mal "$1"; fi; }
 
 DIGEST="sha256:$(printf 'a%.0s' {1..64})"
