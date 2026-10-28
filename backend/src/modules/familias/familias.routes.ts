@@ -2,7 +2,9 @@ import { Router } from "express";
 import { requiereRol } from "../../middleware/auth.js";
 import { prisma } from "../../prisma.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
-import { conflict } from "../../utils/errors.js";
+import { conflict, notFound } from "../../utils/errors.js";
+import { aplicarSaldoSchema } from "../movimientos/movimientos.schema.js";
+import { aplicarSaldo } from "../movimientos/reparto.js";
 import { validar } from "../../utils/validar.js";
 import { cursoActivo } from "../cursos/cursos.utils.js";
 import { editarFamiliaSchema } from "./familias.schema.js";
@@ -39,13 +41,40 @@ familiasRouter.patch(
   }),
 );
 
+// D-48: aplicar el saldo a favor de la familia a una de sus deudas.
+familiasRouter.post(
+  "/:id/saldo/aplicar",
+  asyncHandler(async (req, res) => {
+    const { cargoId } = validar(aplicarSaldoSchema, req.body);
+    const familia = await familiaDelGrupo(req.params.id, req.grupo!.id);
+    const aplicado = await prisma.$transaction((tx) => aplicarSaldo(tx, familia.id, cargoId));
+    res.json({ aplicadoCentimos: aplicado });
+  }),
+);
+
+// D-1: olvidar un pagador aprendido; sus pagos ya clasificados no cambian.
+familiasRouter.delete(
+  "/:id/pagadores/:pagadorId",
+  asyncHandler(async (req, res) => {
+    const familia = await familiaDelGrupo(req.params.id, req.grupo!.id);
+    const { count } = await prisma.pagador.deleteMany({ where: { id: req.params.pagadorId, familiaId: familia.id } });
+    if (!count) throw notFound("Pagador no encontrado");
+    res.status(204).end();
+  }),
+);
+
 // D-30: borrado definitivo de una familia con todos sus niños. Solo administradores, y nunca si tiene pagos.
 familiasRouter.delete(
   "/:id",
   requiereRol("ADMIN"),
   asyncHandler(async (req, res) => {
     const familia = await familiaDelGrupo(req.params.id, req.grupo!.id);
-    if (await prisma.asignacion.count({ where: { cargo: { educando: { familiaId: familia.id } } } })) {
+    const conPagos = await Promise.all([
+      prisma.asignacion.count({ where: { cargo: { educando: { familiaId: familia.id } } } }),
+      // Un pago sin repartir tambien cuenta: es saldo de la familia (D-48).
+      prisma.movimiento.count({ where: { familiaId: familia.id, estado: "CLASIFICADO" } }),
+    ]);
+    if (conPagos.some(Boolean)) {
       throw conflict("Esta familia tiene pagos registrados. Puedes dar de baja a sus niños; su historial se conserva.");
     }
     await prisma.familia.delete({ where: { id: familia.id } });

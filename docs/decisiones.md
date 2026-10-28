@@ -93,6 +93,16 @@ No se borra la antigua.
 | D-46 | **El pago a mano llega en la parte 5, junto con Dudas** | Adelanta parte de la parte 6. Se apunta fecha, quién paga, importe y cómo se pagó, y en la misma pantalla se elige la familia y a qué deudas va, con el mismo reparto que se usa para resolver una duda. |
 | D-47 | **Un pago a mano no se cuenta dos veces** | Al importar el banco, si ya hay un pago a mano de la misma familia y el mismo importe en fechas cercanas, el del banco va a Dudas con el aviso «¿Ya apuntado a mano?». Nunca se suma dos veces sin que lo decida el usuario. |
 
+## Bloque 8 — Parte 5: Dudas, aprendizaje y pago a mano (2026-10-27)
+
+| # | Decisión | Detalle |
+|---|---|---|
+| D-48 | **Saldo a favor: guardar, ver y aplicar** | Concreta D-5c. Lo que no se reparte de un pago queda como saldo de la familia; la pantalla lo dice antes de guardar. En la ficha de familia se ve el saldo y se puede aplicar a una deuda pendiente (se toma de los pagos más antiguos con sobrante). La propuesta al crear un evento llega más adelante. |
+| D-49 | **«No es de familias»** | Un ingreso que no es de ninguna familia (subvención, donación, reintegro) sale de Dudas con una nota corta opcional y queda en el filtro «Otros ingresos». Se puede deshacer. |
+| D-50 | **Recordar un pagador reintenta sus otras dudas** | Al recordar un pagador (D-1), el motor vuelve a pasar por las otras dudas de ese pagador: las que ahora cuadran sin duda se clasifican solas y la app dice cuántas. Las deshechas a mano no se tocan. |
+| D-51 | **Cruce con pagos a mano y marcas, sin límite de fechas** | Concreta D-47. Al importar, si la familia tiene un pago a mano del mismo importe que no esté ya cruzado con uno del banco, el del banco va a Dudas con «¿Ya apuntado a mano?». En la duda, «Es el mismo pago» cruza los dos: el del banco se queda con el reparto y el apuntado queda ligado a él. Vale también para las marcas del listado. Deshacer lo devuelve todo como estaba. |
+| D-52 | **Un pago, una familia** | Cada pago se reparte entre deudas de una sola familia (D-1). El buscador permite cambiar de familia, pero no mezclar dos. |
+
 Los importes se guardan en céntimos (enteros), para no tener errores de redondeo.
 
 **Nota sobre ramas:** la parte 1 sale de `pre` y no de `develop`, porque necesita el esqueleto de la parte 0, que aún

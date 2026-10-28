@@ -1,4 +1,4 @@
-import type { MotivoDuda } from "./movimientos.types";
+import type { MedioPago, MotivoDuda } from "./movimientos.types";
 
 // Por qué un movimiento está en Dudas (D-5): la etiqueta corta y la explicación.
 export const MOTIVOS: Record<MotivoDuda, { etiqueta: string; explicacion: string }> = {
@@ -22,8 +22,21 @@ export const MOTIVOS: Record<MotivoDuda, { etiqueta: string; explicacion: string
     etiqueta: "¿Ya marcado en el listado?",
     explicacion: "No cuadra con lo pendiente y la familia tiene pagos marcados en el listado: puede ser el mismo pago.",
   },
+  POSIBLE_YA_APUNTADO: {
+    etiqueta: "¿Ya apuntado a mano?",
+    explicacion: "Esta familia tiene un pago apuntado a mano del mismo importe: puede ser el mismo dinero.",
+  },
   DESHECHO: {
     etiqueta: "Deshecho",
     explicacion: "Estaba clasificado y alguien lo deshizo.",
   },
 };
+
+export const MEDIOS: { valor: MedioPago; etiqueta: string }[] = [
+  { valor: "EFECTIVO", etiqueta: "Efectivo" },
+  { valor: "BIZUM", etiqueta: "Bizum" },
+  { valor: "TRANSFERENCIA", etiqueta: "Transferencia" },
+  { valor: "OTRO", etiqueta: "Otro" },
+];
+
+export const ETIQUETA_MEDIO = Object.fromEntries(MEDIOS.map((m) => [m.valor, m.etiqueta])) as Record<MedioPago, string>;

@@ -29,7 +29,7 @@ const DUDA = {
   cargos: [{ cargoId: "c3", evento: "Censo", educando: "Sara", importeCentimos: 3000 }],
   clasificadoEn: null,
 };
-const CONTADORES = { dudas: 1, clasificados: 1 };
+const CONTADORES = { dudas: 1, clasificados: 1, otros: 0 };
 const BASE = {
   "GET /auth/yo": { cuerpo: PERFIL_ADMIN },
   "GET /secciones": { cuerpo: { secciones: SECCIONES } },

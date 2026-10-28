@@ -67,6 +67,16 @@ still change.
   leaves, cannot be removed from the event or adjusted below what has been paid, and block deleting the event, the
   child or the family.
 
+- **Part 5 — Doubts, learning and manual payments.** Each doubt opens as a bank receipt with its reason, and is
+  resolved by splitting it among the pending charges of one family (search by child), with partial payments
+  allowed; whatever is not split becomes the family's balance, which can later be applied to a pending charge from
+  the family sheet. "Remember this payer" learns the bank name for that family and retries that payer's other
+  doubts. Income that does not belong to any family can be filed as "Other income" with a note. Payments can be
+  recorded by hand (date, payer, amount, cash/Bizum/transfer/other) with the same split. A bank payment that may be
+  one already recorded by hand or marked in the roster goes to Doubts, and "It's the same payment" links both so
+  nothing is counted twice; undoing restores everything. The home screen shows how many doubts are waiting, and the
+  family sheet shows its balance and learned payers (which can be forgotten).
+
 ### Fixed
 - User-facing API messages now use proper Spanish spelling (contraseña, sesión, sección…).
 - The development proxy keeps the `Host` header, so the CSRF origin check behaves as it does behind nginx.

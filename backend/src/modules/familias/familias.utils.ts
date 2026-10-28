@@ -1,6 +1,7 @@
 import { prisma } from "../../prisma.js";
 import { notFound } from "../../utils/errors.js";
 import { estadoDe, importeDe } from "../eventos/cargos.utils.js";
+import { saldoDe } from "../movimientos/reparto.js";
 
 const MAX_PAGOS_FICHA = 50;
 
@@ -58,8 +59,12 @@ export const fichaFamilia = async (familiaId: string, grupoId: string, cursoId: 
     where: { grupoId, familiaId, estado: "CLASIFICADO" },
     orderBy: [{ fecha: { sort: "desc", nulls: "last" } }, { creadoEn: "desc" }],
     take: MAX_PAGOS_FICHA,
-    select: { id: true, origen: true, fecha: true, concepto: true, importeCentimos: true },
+    select: { id: true, origen: true, medio: true, fecha: true, concepto: true, importeCentimos: true },
   });
+  const [saldoCentimos, pagadores] = await Promise.all([
+    saldoDe(prisma, familiaId),
+    prisma.pagador.findMany({ where: { familiaId }, orderBy: { creadoEn: "asc" }, select: { id: true, nombre: true } }),
+  ]);
   return {
     id: familia.id,
     nombre: familia.nombre,
@@ -74,5 +79,8 @@ export const fichaFamilia = async (familiaId: string, grupoId: string, cursoId: 
       }),
     })),
     pagos: pagos.map((p) => ({ ...p, fecha: p.fecha?.toISOString().slice(0, 10) ?? null })),
+    // D-48 y D-1: saldo a favor y nombres de quien paga aprendidos para esta familia.
+    saldoCentimos,
+    pagadores,
   };
 };

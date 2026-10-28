@@ -8,13 +8,12 @@ import { usePerfil } from "@/features/auth/useSesion";
 import { useSecciones } from "@/features/secciones/secciones.api";
 import { FONDO_SECCION } from "@/features/secciones/secciones.constants";
 import { mensajeDeError } from "@/utils/api";
+import { plano } from "@/utils/texto";
 import { cx } from "@/utils/cx";
 import { EducandoDialogo } from "./EducandoDialogo";
 import { useEducandos } from "./educandos.api";
 import { FichaFamiliaDialogo } from "./FichaFamiliaDialogo";
 
-// Para buscar sin que importen tildes ni mayusculas.
-const plano = (texto: string) => texto.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 
 // D-32: lista por secciones con buscador; al tocar un niño se abre la ficha de su familia (no para scouters).
 export const EducandosPagina = () => {

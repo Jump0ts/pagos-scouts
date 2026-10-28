@@ -30,7 +30,9 @@ const FICHA = {
       ],
     },
   ],
-  pagos: [{ id: "m1", origen: "BANCO", fecha: "2026-10-01", concepto: "LUCIA FERRER SOTO", importeCentimos: 16000 }],
+  pagos: [{ id: "m1", origen: "BANCO", medio: null, fecha: "2026-10-01", concepto: "LUCIA FERRER SOTO", importeCentimos: 16000 }],
+  saldoCentimos: 4000,
+  pagadores: [{ id: "p1", nombre: "ROSARIO QUINTANA ARNEDO" }],
 };
 const BASE = {
   "GET /auth/yo": { cuerpo: PERFIL_ADMIN },
@@ -72,6 +74,10 @@ describe("pantalla Educandos", () => {
     expect(within(deSara).getByText("Pagado")).toBeInTheDocument();
     expect(within(deSara).getByText(/50,00\s€ de 200,00\s€/)).toBeInTheDocument();
     expect(within(ficha).getByText("LUCIA FERRER SOTO")).toBeInTheDocument();
+    // D-48 y D-1: el saldo a favor, que se puede usar en lo que queda pendiente, y quién paga aprendido.
+    expect(within(ficha).getByText(/Saldo a favor: 40,00/)).toBeInTheDocument();
+    expect(within(deSara).getByRole("button", { name: "Usar saldo en Campamento de Sara" })).toBeInTheDocument();
+    expect(within(ficha).getByRole("button", { name: "Olvidar a ROSARIO QUINTANA ARNEDO" })).toBeInTheDocument();
   });
 
   it("un scouter ve la lista pero no abre fichas ni ve los botones de gestión", async () => {

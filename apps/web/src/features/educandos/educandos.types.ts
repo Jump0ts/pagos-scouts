@@ -34,7 +34,7 @@ export type HijoEnFicha = {
   cargos: CargoEnFicha[];
 };
 
-export type PagoEnFicha = Pick<Movimiento, "id" | "origen" | "fecha" | "concepto" | "importeCentimos">;
+export type PagoEnFicha = Pick<Movimiento, "id" | "origen" | "medio" | "fecha" | "concepto" | "importeCentimos">;
 
 export type FichaFamilia = {
   id: string;
@@ -42,6 +42,9 @@ export type FichaFamilia = {
   responsables: { id: string; nombreCompleto: string }[];
   educandos: HijoEnFicha[];
   pagos: PagoEnFicha[];
+  // D-48 y D-1: saldo a favor y nombres de quien paga aprendidos.
+  saldoCentimos: number;
+  pagadores: { id: string; nombre: string }[];
 };
 
 // A que familia va un niño al darlo de alta o moverlo.

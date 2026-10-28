@@ -1,4 +1,4 @@
-import type { EstadoMovimiento, MotivoDuda, OrigenMovimiento } from "@prisma/client";
+import type { EstadoMovimiento, MedioPago, MotivoDuda, OrigenMovimiento } from "@prisma/client";
 
 // Un cargo pagado (clasificado) o sugerido (en Dudas) por un movimiento.
 export type CargoDeMovimiento = { cargoId: string; evento: string; educando: string; importeCentimos: number };
@@ -25,10 +25,26 @@ export type ResumenImportacion = {
   movimientos: MovimientoPrevisto[];
 };
 
+// Un pago a mano o una marca del listado (candidatos a cruzar, o el cruzado con uno del banco: D-51).
+export type Apuntado = {
+  id: string;
+  origen: OrigenMovimiento;
+  fecha: string | null;
+  concepto: string;
+  medio: MedioPago | null;
+  importeCentimos: number;
+};
+
 export type MovimientoVista = Omit<MovimientoPrevisto, "fecha"> & {
   id: string;
   origen: OrigenMovimiento;
   fecha: string | null;
+  medio: MedioPago | null;
+  nota: string | null;
+  // D-48: lo que no se repartio y queda como saldo de la familia.
+  sobranteCentimos: number;
+  // D-51: el pago a mano o la marca que resulto ser este mismo dinero.
+  cruce: Apuntado | null;
   // Nulo en un clasificado = lo clasifico la app sola.
   clasificadoPor: string | null;
   clasificadoEn: string | null;
