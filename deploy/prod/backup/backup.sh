@@ -40,7 +40,11 @@ mv "$PARTIAL" "$FILE"
 if [ "$WEEKDAY" = "7" ]; then cp -p "$FILE" "$BACKUP_ROOT/weekly/"; fi
 
 # Retención por número de copias (no por fecha): si el cron deja de funcionar, no se va vaciando la carpeta.
-prune() { ls -1t "$1"/pagos-scouts-*.sql.gz.age 2>/dev/null | tail -n +"$(($2 + 1))" | xargs -r rm -f --; }
+# (Con find y no con ls: una carpeta vacía no es un error.)
+prune() {
+  find "$1" -maxdepth 1 -name 'pagos-scouts-*.sql.gz.age' -printf '%T@ %p\n' | sort -rn | tail -n +"$(($2 + 1))" \
+    | cut -d' ' -f2- | xargs -r rm -f --
+}
 prune "$BACKUP_ROOT/daily" "$DAILY_KEEP"
 prune "$BACKUP_ROOT/weekly" "$WEEKLY_KEEP"
 

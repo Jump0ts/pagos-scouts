@@ -116,6 +116,8 @@ preparar; env_bueno
 B="$T/copias"
 run_backup() { ENV_FILE="$PAGOS_SCOUTS_BASE/.env.production" COMPOSE_FILE="$AQUI/docker-compose.yml" BACKUP_DIR="$B" bash "$AQUI/backup/backup.sh"; }
 BACKUP_WEEKDAY=3 run_backup >"$T/salida" 2>&1
+codigo=$?
+espera "termina bien aunque aún no haya semanales" "[ $codigo -eq 0 ]"
 espera "deja una copia cifrada con la clave pública" "ls '$B'/daily/pagos-scouts-*.sql.gz.age >/dev/null 2>&1 && grep -q 'age -r $RECIPIENT' '$LLAMADAS'"
 espera "solo legible por su dueño" "[ \"\$(stat -c %a \"\$(ls '$B'/daily/*.age | head -1)\")\" = 600 ]"
 for i in $(seq 1 9); do touch -d "-$i day" "$B/daily/pagos-scouts-2026010$i-031500.sql.gz.age"; done
