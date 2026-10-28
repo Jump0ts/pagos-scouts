@@ -1,5 +1,5 @@
 import * as Menu from "@radix-ui/react-dropdown-menu";
-import { ArrowLeft, Ellipsis, Pencil, Plus, Trash2, UserMinus } from "lucide-react";
+import { ArrowLeft, Ellipsis, FileSpreadsheet, MessageCircle, Pencil, Plus, Trash2, UserMinus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { Aviso } from "@/components/Aviso";
@@ -10,7 +10,7 @@ import { Confirmar } from "@/components/Confirmar";
 import { usePerfil } from "@/features/auth/useSesion";
 import { useSecciones } from "@/features/secciones/secciones.api";
 import { FONDO_SECCION } from "@/features/secciones/secciones.constants";
-import { mensajeDeError } from "@/utils/api";
+import { descargar, mensajeDeError } from "@/utils/api";
 import { cx } from "@/utils/cx";
 import { euros } from "@/utils/dinero";
 import { AjustarCargoDialogo } from "./AjustarCargoDialogo";
@@ -18,6 +18,9 @@ import { AnadirNinosDialogo } from "./AnadirNinosDialogo";
 import { useBorrarEvento, useEvento, useQuitarCargo } from "./eventos.api";
 import { ESTADOS, ETIQUETA_TIPO } from "./eventos.constants";
 import type { CargoVista, EstadoCargo } from "./eventos.types";
+import { textoRecordatorio } from "./eventos.utils";
+import { PagosCargoDialogo } from "./PagosCargoDialogo";
+import { RecordatorioDialogo } from "./RecordatorioDialogo";
 
 const fechaLarga = (f: string) => new Date(`${f}T12:00:00`).toLocaleDateString("es-ES", { day: "numeric", month: "long" });
 const claseItem = "flex cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm outline-none data-[highlighted]:bg-hundido";
@@ -29,6 +32,38 @@ const FILTROS: { valor: EstadoCargo | null; etiqueta: string }[] = [
   { valor: "PAGADO", etiqueta: "Pagados" },
   { valor: "EXENTO", etiqueta: "Exentos" },
 ];
+
+// Un niño del evento. Para Admin y Tesorería, tocarlo abre sus pagos (D-56).
+const FilaCargo = ({ cargo: c, hermanos, onVer }: { cargo: CargoVista; hermanos: boolean; onVer?: () => void }) => {
+  const contenido = (
+    <>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate">
+          <span className="font-semibold">{c.educando.nombre}</span> <span className="text-suave">{c.educando.apellidos}</span>
+        </span>
+        <span className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-suave">
+          {hermanos && c.posicionHermano > 1 && <span>{c.posicionHermano}º hermano</span>}
+          {c.ajustado && <span title={c.motivoAjuste ?? undefined}>Ajustado{c.motivoAjuste ? `: ${c.motivoAjuste}` : ""}</span>}
+        </span>
+      </span>
+      <span className="text-right text-sm tabular-nums">
+        <span className="block font-semibold">{euros(c.importeCentimos)}</span>
+        {c.pagadoCentimos > 0 && c.estado === "PARCIAL" && <span className="text-xs text-suave">{euros(c.pagadoCentimos)} pagado</span>}
+      </span>
+      <span className={cx("shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold", ESTADOS[c.estado].clase)}>
+        {ESTADOS[c.estado].etiqueta}
+      </span>
+    </>
+  );
+  const clase = "flex min-w-0 flex-1 items-center gap-3 py-2.5 pl-4 text-left";
+  return onVer ? (
+    <button type="button" onClick={onVer} className={cx(clase, "rounded-2xl outline-none hover:bg-hundido/60 focus-visible:ring-2 focus-visible:ring-bosque")}>
+      {contenido}
+    </button>
+  ) : (
+    <div className={clase}>{contenido}</div>
+  );
+};
 
 // D-39: resumen, filtros por estado y sección, y los niños agrupados por sección con su estado.
 export const EventoDetallePagina = () => {
@@ -49,6 +84,10 @@ export const EventoDetallePagina = () => {
   const [quitando, setQuitando] = useState<CargoVista | null>(null);
   const [anadiendo, setAnadiendo] = useState(false);
   const [borrando, setBorrando] = useState(false);
+  const [viendo, setViendo] = useState<CargoVista | null>(null);
+  const [recordando, setRecordando] = useState(false);
+  const [exportando, setExportando] = useState(false);
+  const [errorExportar, setErrorExportar] = useState<string | null>(null);
 
   const visibles = useMemo(
     () => (data?.cargos ?? []).filter((c) => (!estado || c.estado === estado) && (!seccion || c.seccionId === seccion)),
@@ -62,6 +101,22 @@ export const EventoDetallePagina = () => {
   const delEvento = secciones.filter((s) => evento.precios.some((p) => p.seccionId === s.id));
   const grupos = delEvento.map((s) => ({ seccion: s, cargos: visibles.filter((c) => c.seccionId === s.id) })).filter((g) => g.cargos.length);
   const pendiente = resumen.debidoCentimos - resumen.pagadoCentimos;
+  const nombreSeccion = seccion ? delEvento.find((s) => s.id === seccion)?.nombre : delEvento.length === 1 ? delEvento[0].nombre : undefined;
+  const faltan = visibles.filter((c) => c.estado === "PENDIENTE" || c.estado === "PARCIAL").length;
+
+  // D-54: el Excel lleva lo mismo que se ve con los filtros de ahora.
+  const exportar = async () => {
+    const filtros = new URLSearchParams({ ...(estado && { estado }), ...(seccion && { seccionId: seccion }) }).toString();
+    setExportando(true);
+    setErrorExportar(null);
+    try {
+      await descargar(`/eventos/${evento.id}/exportar${filtros ? `?${filtros}` : ""}`);
+    } catch (e) {
+      setErrorExportar(mensajeDeError(e));
+    } finally {
+      setExportando(false);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-5">
@@ -162,6 +217,18 @@ export const EventoDetallePagina = () => {
         )}
       </div>
 
+      {data.cargos.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          <Boton variante="secundario" tamano="pequeno" onClick={() => setRecordando(true)} disabled={faltan === 0}>
+            <MessageCircle className="size-4" aria-hidden /> Recordatorio
+          </Boton>
+          <Boton variante="secundario" tamano="pequeno" onClick={exportar} cargando={exportando}>
+            <FileSpreadsheet className="size-4" aria-hidden /> Descargar Excel
+          </Boton>
+        </div>
+      )}
+      {errorExportar && <Aviso tono="error">{errorExportar}</Aviso>}
+
       {grupos.length === 0 && (
         <p className="rounded-3xl bg-superficie p-6 text-center text-suave ring-1 ring-linea">
           {data.cargos.length === 0
@@ -180,23 +247,8 @@ export const EventoDetallePagina = () => {
           </h2>
           <ul className="divide-y divide-linea overflow-hidden rounded-3xl bg-superficie ring-1 ring-linea">
             {cargos.map((c) => (
-              <li key={c.id} className="flex items-center gap-3 py-2.5 pr-2 pl-4">
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate">
-                    <span className="font-semibold">{c.educando.nombre}</span> <span className="text-suave">{c.educando.apellidos}</span>
-                  </span>
-                  <span className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-suave">
-                    {evento.descuentoHermanos && c.posicionHermano > 1 && <span>{c.posicionHermano}º hermano</span>}
-                    {c.ajustado && <span title={c.motivoAjuste ?? undefined}>Ajustado{c.motivoAjuste ? `: ${c.motivoAjuste}` : ""}</span>}
-                  </span>
-                </span>
-                <span className="text-right text-sm tabular-nums">
-                  <span className="block font-semibold">{euros(c.importeCentimos)}</span>
-                  {c.pagadoCentimos > 0 && c.estado === "PARCIAL" && <span className="text-xs text-suave">{euros(c.pagadoCentimos)} pagado</span>}
-                </span>
-                <span className={cx("shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold", ESTADOS[c.estado].clase)}>
-                  {ESTADOS[c.estado].etiqueta}
-                </span>
+              <li key={c.id} className="flex items-center gap-1 pr-2">
+                <FilaCargo cargo={c} hermanos={evento.descuentoHermanos} onVer={gestiona ? () => setViendo(c) : undefined} />
                 {gestiona && (
                   <Menu.Root>
                     <Menu.Trigger
@@ -223,6 +275,13 @@ export const EventoDetallePagina = () => {
         </section>
       ))}
 
+      <RecordatorioDialogo
+        abierto={recordando}
+        onCambiar={setRecordando}
+        faltan={faltan}
+        texto={textoRecordatorio(evento.nombre, nombreSeccion ?? null, visibles)}
+      />
+
       {data.excluidos > 0 && gestiona && (
         <p className="text-sm text-suave">
           {data.excluidos} {data.excluidos === 1 ? "niño quitado" : "niños quitados"} a mano de este evento. Puedes volver a añadirlos con «Añadir niños».
@@ -231,6 +290,7 @@ export const EventoDetallePagina = () => {
 
       {gestiona && (
         <>
+          <PagosCargoDialogo eventoId={evento.id} evento={evento.nombre} cargo={viendo} onCerrar={() => setViendo(null)} />
           <AjustarCargoDialogo eventoId={evento.id} cargo={ajustando} onCerrar={() => setAjustando(null)} />
           <AnadirNinosDialogo detalle={data} abierto={anadiendo} onCambiar={setAnadiendo} />
           <Confirmar

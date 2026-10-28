@@ -103,6 +103,17 @@ No se borra la antigua.
 | D-51 | **Cruce con pagos a mano y marcas, sin límite de fechas** | Concreta D-47. Al importar, si la familia tiene un pago a mano del mismo importe que no esté ya cruzado con uno del banco, el del banco va a Dudas con «¿Ya apuntado a mano?». En la duda, «Es el mismo pago» cruza los dos: el del banco se queda con el reparto y el apuntado queda ligado a él. Vale también para las marcas del listado. Deshacer lo devuelve todo como estaba. |
 | D-52 | **Un pago, una familia** | Cada pago se reparte entre deudas de una sola familia (D-1). El buscador permite cambiar de familia, pero no mezclar dos. |
 
+## Bloque 9 — Parte 6: consulta y exportación por evento (2026-10-28)
+
+| # | Decisión | Detalle |
+|---|---|---|
+| D-53 | **Exportar a Excel (.xlsx)** | El estado de un evento se descarga como `.xlsx` que genera la API con SheetJS (el mismo que lee los Excel). Importes como números con formato de euros y cabecera fija. El fichero se crea al vuelo y no se guarda. |
+| D-54 | **Se exporta lo filtrado, con resumen** | El Excel lleva lo que se está viendo (filtros de estado y sección): una fila por niño con nombre, apellidos, sección, importe, pagado, pendiente y estado. Arriba, el evento, el curso y el total cobrado y pendiente de esas filas. |
+| D-55 | **Exporta cada uno lo que ve** | Admin y Tesorería exportan todo el evento; un Scouter, solo sus secciones (D-16), igual que en pantalla. El motivo de un ajuste nunca va en el Excel (D-35). |
+| D-56 | **Pagos de cada niño en el evento** | En el detalle del evento, Admin y Tesorería pueden tocar a un niño y ver qué pagos cubren su cargo: fecha, quién pagó, cómo (banco, a mano con su medio o marca del listado) e importe. Los Scouters no lo ven. |
+| D-57 | **Eventos abiertos en Inicio** | Inicio muestra los eventos del curso que siguen abiertos o tienen algo pendiente, con su % cobrado y enlace al detalle. Los Scouters ven los de sus secciones, con lo cobrado de esas secciones. |
+| D-58 | **Recordatorio para copiar** | En el detalle del evento, un botón copia (o comparte en el móvil) un texto con quién falta por pagar según los filtros: nombre e inicial del primer apellido (si dos coinciden, apellidos completos), «a medias» si ha pagado parte, y sin importes. Para pegarlo en el grupo de familias; lo pueden usar todos los roles, con su visibilidad. |
+
 Los importes se guardan en céntimos (enteros), para no tener errores de redondeo.
 
 **Nota sobre ramas:** la parte 1 sale de `pre` y no de `develop`, porque necesita el esqueleto de la parte 0, que aún

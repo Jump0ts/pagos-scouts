@@ -42,3 +42,27 @@ export const api = async <T>(ruta: string, { metodo = "GET", cuerpo, archivo }: 
 
 export const mensajeDeError = (error: unknown) =>
   error instanceof ApiError ? error.message : "Algo ha fallado. Inténtalo de nuevo.";
+
+// Un fichero que genera la API (el Excel de un evento): se pide y se guarda con el nombre que propone el servidor.
+export const descargar = async (ruta: string) => {
+  let res: Response;
+  try {
+    res = await fetch(`/api${ruta}`, { credentials: "same-origin" });
+  } catch {
+    throw new ApiError(0, "No hay conexión con el servidor. Comprueba tu conexión e inténtalo de nuevo.");
+  }
+  if (!res.ok) {
+    const datos = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new ApiError(res.status, datos?.error ?? "Algo ha fallado. Inténtalo de nuevo.");
+  }
+  const cabecera = res.headers.get("Content-Disposition") ?? "";
+  const utf8 = /filename\*=UTF-8''([^;]+)/i.exec(cabecera)?.[1];
+  const nombre = utf8 ? decodeURIComponent(utf8) : (/filename="([^"]+)"/i.exec(cabecera)?.[1] ?? "descarga");
+  const url = URL.createObjectURL(await res.blob());
+  const enlace = Object.assign(document.createElement("a"), { href: url, download: nombre });
+  document.body.append(enlace);
+  enlace.click();
+  enlace.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return nombre;
+};
