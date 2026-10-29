@@ -28,7 +28,7 @@ export const TarjetaInstalar = () => {
           <h2 id="instalar-titulo" className="font-display text-lg font-bold">
             Tenla a mano en tu móvil
           </h2>
-          <p className="text-sm text-suave">Instálala y se abrirá como una app más, a pantalla completa.</p>
+          <p className="text-sm text-tinta/80">Instálala y se abrirá como una app más, a pantalla completa.</p>
         </div>
         <Boton tamano="pequeno" onClick={() => setAbierta(true)}>
           Cómo instalarla

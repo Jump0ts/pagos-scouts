@@ -102,7 +102,7 @@ export const AppLayout = () => {
       </main>
 
       <nav
-        aria-label="Principal"
+        aria-label="Principal (móvil)"
         className="fixed inset-x-0 bottom-0 z-20 flex justify-around border-t border-linea bg-superficie/95 pt-2 backdrop-blur md:hidden"
         style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}
       >

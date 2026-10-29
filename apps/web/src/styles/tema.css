@@ -13,12 +13,12 @@
   --color-suave: oklch(0.52 0.025 150);
   --color-linea: oklch(0.9 0.012 145);
   --color-bosque: oklch(0.46 0.1 155);
-  --color-bosque-claro: oklch(0.93 0.04 150);
+  --color-bosque-claro: oklch(0.94 0.035 150);
   --color-ambar: oklch(0.72 0.15 70);
   --color-ambar-claro: oklch(0.95 0.05 85);
-  --color-rojo: oklch(0.56 0.19 28);
+  --color-rojo: oklch(0.53 0.19 28);
   --color-rojo-claro: oklch(0.95 0.03 25);
-  --color-azul: oklch(0.55 0.13 245);
+  --color-azul: oklch(0.51 0.13 245);
   --color-azul-claro: oklch(0.95 0.025 245);
 
   --color-castores: oklch(0.7 0.15 55);

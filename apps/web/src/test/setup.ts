@@ -10,3 +10,6 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
+
+// jsdom no desplaza la pagina; el formulario publico sube arriba al enviar.
+window.scrollTo = () => undefined;
