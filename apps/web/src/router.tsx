@@ -15,6 +15,9 @@ import { DudaPagina } from "./features/movimientos/DudaPagina";
 import { ImportarMovimientosPagina } from "./features/movimientos/ImportarMovimientosPagina";
 import { MovimientosPagina } from "./features/movimientos/MovimientosPagina";
 import { PagoManualPagina } from "./features/movimientos/PagoManualPagina";
+import { FormularioPedidoPagina } from "./features/pedidos/FormularioPedidoPagina";
+import { PedidoDetallePagina } from "./features/pedidos/PedidoDetallePagina";
+import { PedidoFormularioPagina } from "./features/pedidos/PedidoFormularioPagina";
 import { SeccionesAjustes } from "./features/secciones/SeccionesAjustes";
 import { PersonasAjustes } from "./features/usuarios/PersonasAjustes";
 import { AppLayout } from "./layout/AppLayout";
@@ -24,6 +27,8 @@ export const rutas = [
   { path: "/login", element: <LoginPagina /> },
   { path: "/invitacion/:token", element: <InvitacionPagina /> },
   { path: "/restablecer/:token", element: <RestablecerPagina /> },
+  // D-67: el formulario de un pedido para las familias; el codigo va detras del #.
+  { path: "/pedido", element: <FormularioPedidoPagina /> },
 
   // Con sesion
   {
@@ -36,12 +41,15 @@ export const rutas = [
           { path: "educandos", element: <EducandosPagina /> },
           { path: "eventos", element: <EventosPagina /> },
           { path: "eventos/:id", element: <EventoDetallePagina /> },
+          { path: "eventos/pedidos/:id", element: <PedidoDetallePagina /> },
           {
             element: <SoloRol roles={["ADMIN", "TESORERIA"]} />,
             children: [
               { path: "educandos/importar", element: <ImportarListadoPagina /> },
               { path: "eventos/nuevo", element: <EventoFormularioPagina /> },
               { path: "eventos/:id/editar", element: <EventoFormularioPagina /> },
+              { path: "eventos/pedidos/nuevo", element: <PedidoFormularioPagina /> },
+              { path: "eventos/pedidos/:id/editar", element: <PedidoFormularioPagina /> },
               { path: "movimientos", element: <MovimientosPagina /> },
               { path: "movimientos/importar", element: <ImportarMovimientosPagina /> },
               { path: "movimientos/nuevo", element: <PagoManualPagina /> },

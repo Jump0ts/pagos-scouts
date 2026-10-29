@@ -1,7 +1,7 @@
 import * as Menu from "@radix-ui/react-dropdown-menu";
 import { ArrowLeft, Ellipsis, FileSpreadsheet, MessageCircle, Pencil, Plus, Trash2, UserMinus } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router";
+import { Link, Navigate, useLocation, useNavigate, useParams } from "react-router";
 import { Aviso } from "@/components/Aviso";
 import { BarraProgreso } from "@/components/BarraProgreso";
 import { Boton } from "@/components/Boton";
@@ -96,6 +96,8 @@ export const EventoDetallePagina = () => {
 
   if (isPending) return <Cargando />;
   if (error || !data) return <Aviso tono="error">{mensajeDeError(error)}</Aviso>;
+  // Un enlace antiguo a un pedido (desde Inicio o la ficha de una familia) lleva a su pantalla (D-66).
+  if (data.evento.tipo === "PEDIDO") return <Navigate to={`/eventos/pedidos/${data.evento.id}`} replace />;
 
   const { evento, resumen } = data;
   const delEvento = secciones.filter((s) => evento.precios.some((p) => p.seccionId === s.id));
