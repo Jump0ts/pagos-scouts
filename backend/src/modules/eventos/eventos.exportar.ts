@@ -1,4 +1,5 @@
 import * as XLSX from "xlsx";
+import { textoParaExcel } from "../../utils/hoja.js";
 import type { EstadoPago } from "./cargos.utils.js";
 
 export type FilaExportada = {
@@ -25,15 +26,15 @@ export const excelDeEvento = ({ evento, curso, seccion, estado, filas }: Datos):
   const pendiente = filas.reduce((n, f) => n + f.importeCentimos - f.pagadoCentimos, 0);
   const filtro = [seccion, estado && FILTRO[estado]].filter(Boolean).join(" · ");
   const resumen = [
-    [evento],
+    [textoParaExcel(evento)],
     [`Curso ${curso}${filtro ? ` · ${filtro}` : ""} · ${filas.length} ${filas.length === 1 ? "niño" : "niños"}`],
     ["Cobrado", aEuros(cobrado), "Pendiente", aEuros(pendiente)],
     [],
   ];
   const cuerpo = filas.map((f) => [
-    f.nombre,
-    f.apellidos,
-    f.seccion,
+    textoParaExcel(f.nombre),
+    textoParaExcel(f.apellidos),
+    textoParaExcel(f.seccion),
     aEuros(f.importeCentimos),
     aEuros(f.pagadoCentimos),
     aEuros(f.importeCentimos - f.pagadoCentimos),

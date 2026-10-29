@@ -31,3 +31,9 @@ export const leerHoja = (contenido: Buffer, { raw = false } = {}): unknown[][] =
     throw badRequest("No se ha podido leer el fichero. Sube el Excel tal como lo guardas (.xlsx, .xls o .csv).");
   }
 };
+
+/**
+ * D-70: un texto que empieza por =, +, -, @, tabulador o retorno puede ejecutarse como formula al abrir el Excel (o
+ * un CSV sacado de el). Se le antepone un apostrofo para que siempre sea texto.
+ */
+export const textoParaExcel = (texto: string) => (/^[=+\-@\t\r]/.test(texto) ? `'${texto}` : texto);
