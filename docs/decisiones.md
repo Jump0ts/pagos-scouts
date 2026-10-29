@@ -129,6 +129,7 @@ No se borra la antigua.
 | # | Decisión | Detalle |
 |---|---|---|
 | D-64 | **Reinicio automático de madrugada tras actualizaciones** | Completa D-59. `unattended-upgrades` reinicia el droplet solo cuando una actualización lo pide (sobre todo las del kernel), a las 04:30 UTC: después de la copia de las 03:15 y con la web casi sin uso. Reinicia aunque haya una sesión SSH abierta. Los contenedores vuelven solos (`restart: unless-stopped`) y el check de Uptime avisa si la web no vuelve. Se descartan el reinicio a mano (el kernel puede quedarse semanas sin parchear) y Livepatch (cuenta y servicio extra para un solo droplet). |
+| D-65 | **Las copias se bajan al encender el PC; más adelante, desde el servidor de casa** | Completa D-62. El PC no se queda encendido siempre (gastaría decenas de euros al año solo para esto): la tarea de Windows se lanza a las 09:00 o, si el PC estaba apagado, en cuanto se enciende. Basta con encenderlo una vez por semana, porque el servidor guarda 7 copias diarias y 4 semanales y el script baja todas las que falten. Cuando el servidor de casa esté montado, la descarga diaria pasará a un cron allí (con un script en bash y su propia clave para `deploy`); la clave privada de `age` y la prueba de restauración siguen solo en el PC. |
 
 Los importes se guardan en céntimos (enteros), para no tener errores de redondeo.
 
