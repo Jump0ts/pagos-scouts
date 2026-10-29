@@ -1,4 +1,5 @@
 import { reiniciarIntentos } from "../src/modules/auth/intentos.js";
+import { reiniciarLimites } from "../src/utils/limite.js";
 import { prisma } from "../src/prisma.js";
 
 // Barrera de seguridad: los tests vacian la base de datos en cada prueba, asi que solo pueden correr contra una
@@ -11,6 +12,11 @@ if (!/test/i.test(nombreBase)) {
 }
 
 const TABLAS = [
+  "EnvioPedido",
+  "LineaPedido",
+  "ValorOpcion",
+  "OpcionArticulo",
+  "Articulo",
   "Asignacion",
   "Movimiento",
   "Pagador",
@@ -36,6 +42,7 @@ const TABLAS = [
 beforeEach(async () => {
   await prisma.$executeRawUnsafe(`TRUNCATE ${TABLAS.map((t) => `"${t}"`).join(", ")} CASCADE`);
   reiniciarIntentos();
+  reiniciarLimites();
 });
 
 afterAll(async () => {

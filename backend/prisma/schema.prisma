@@ -121,9 +121,11 @@ model Educando {
 }
 
 // D-4: "toda la sección" (cuota, censo) genera cargo a cada niño matriculado; "con apuntados", solo a los marcados.
+// D-66: "pedido", un cargo por persona que es la suma de sus lineas (sudaderas, camisetas...).
 enum TipoEvento {
   TODA_SECCION
   CON_APUNTADOS
+  PEDIDO
 }
 
 // Importes en céntimos (enteros): sin errores de redondeo.
@@ -142,10 +144,17 @@ model Evento {
   descuentoHermanos     Boolean    @default(false)
   precioSegundoCentimos Int?
   precioTerceroCentimos Int?
+  // D-67: solo en pedidos. El enlace del formulario publico (solo sirve para enviar a este pedido, por eso se
+  // guarda tal cual y se puede volver a copiar), las instrucciones de pago y cuando se cerro (D-68).
+  enlacePedido          String?    @unique
+  instruccionesPago     String?
+  cerradoEn             DateTime?
   creadoEn              DateTime   @default(now())
 
-  precios PrecioSeccion[]
-  cargos  Cargo[]
+  precios   PrecioSeccion[]
+  cargos    Cargo[]
+  articulos Articulo[]
+  envios    EnvioPedido[]
 
   @@index([grupoId, cursoId])
 }
@@ -188,6 +197,7 @@ model Cargo {
   creadoEn                 DateTime    @default(now())
 
   asignaciones Asignacion[]
+  lineas       LineaPedido[]
 
   @@unique([eventoId, educandoId])
   @@index([educandoId])
@@ -410,4 +420,87 @@ model Pagador {
 
   @@unique([grupoId, clave])
   @@index([familiaId])
+}
+
+// D-66: catalogo de un pedido. Cada articulo tiene precio, unidades maximas por persona y opciones.
+model Articulo {
+  id             String @id @default(cuid())
+  eventoId       String
+  evento         Evento @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+  nombre         String
+  precioCentimos Int
+  maxUnidades    Int    @default(5)
+  orden          Int
+
+  opciones OpcionArticulo[]
+  lineas   LineaPedido[]
+
+  @@index([eventoId])
+}
+
+// LISTA: valores cerrados (talla, color). TEXTO: texto corto (nombre al dorso), con su suplemento si se rellena.
+enum TipoOpcion {
+  LISTA
+  TEXTO
+}
+
+model OpcionArticulo {
+  id                 String     @id @default(cuid())
+  articuloId         String
+  articulo           Articulo   @relation(fields: [articuloId], references: [id], onDelete: Cascade)
+  nombre             String
+  tipo               TipoOpcion
+  obligatoria        Boolean    @default(true)
+  maxLongitud        Int?
+  suplementoCentimos Int        @default(0)
+  orden              Int
+
+  valores ValorOpcion[]
+
+  @@index([articuloId])
+}
+
+model ValorOpcion {
+  id                 String         @id @default(cuid())
+  opcionId           String
+  opcion             OpcionArticulo @relation(fields: [opcionId], references: [id], onDelete: Cascade)
+  valor              String
+  suplementoCentimos Int            @default(0)
+  orden              Int
+
+  @@index([opcionId])
+}
+
+// Una unidad pedida. Las elecciones se guardan como se vieron al pedir ([{ opcion, valor, suplementoCentimos }])
+// para que cambiar el catalogo despues no cambie lo ya pedido; el importe tambien queda fijo.
+model LineaPedido {
+  id              String   @id @default(cuid())
+  cargoId         String
+  cargo           Cargo    @relation(fields: [cargoId], references: [id], onDelete: Cascade)
+  // NoAction (no Restrict): un articulo con lineas no se puede quitar del catalogo, pero al borrar el evento las
+  // lineas caen con sus cargos en la misma orden; Restrict lo comprobaria antes y fallaria.
+  articuloId      String
+  articulo        Articulo @relation(fields: [articuloId], references: [id], onDelete: NoAction)
+  importeCentimos Int
+  elecciones      Json
+  creadoEn        DateTime @default(now())
+
+  @@index([cargoId])
+  @@index([articuloId])
+}
+
+// D-68: lo que llega por el formulario publico, pendiente de revisar. Al aceptarlo o rechazarlo se borra (D-70).
+model EnvioPedido {
+  id            String   @id @default(cuid())
+  eventoId      String
+  evento        Evento   @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+  nombre        String
+  apellidos     String
+  seccionId     String
+  // [{ articuloId, articulo, importeCentimos, elecciones: [{ opcion, valor, suplementoCentimos }] }]
+  lineas        Json
+  totalCentimos Int
+  creadoEn      DateTime @default(now())
+
+  @@index([eventoId])
 }

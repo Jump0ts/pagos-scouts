@@ -1,6 +1,6 @@
 import type { EstadoCargo, TipoEvento } from "./eventos.types";
 
-export const TIPOS_EVENTO: { valor: TipoEvento; etiqueta: string; descripcion: string }[] = [
+export const TIPOS_EVENTO: { valor: Exclude<TipoEvento, "PEDIDO">; etiqueta: string; descripcion: string }[] = [
   {
     valor: "TODA_SECCION",
     etiqueta: "Toda la sección",
@@ -13,7 +13,10 @@ export const TIPOS_EVENTO: { valor: TipoEvento; etiqueta: string; descripcion: s
   },
 ];
 
-export const ETIQUETA_TIPO = Object.fromEntries(TIPOS_EVENTO.map((t) => [t.valor, t.etiqueta])) as Record<TipoEvento, string>;
+export const ETIQUETA_TIPO = { ...Object.fromEntries(TIPOS_EVENTO.map((t) => [t.valor, t.etiqueta])), PEDIDO: "Pedido" } as Record<TipoEvento, string>;
+
+/** Un pedido tiene su propia pantalla (D-66). */
+export const rutaDeEvento = (e: { id: string; tipo: TipoEvento }) => (e.tipo === "PEDIDO" ? `/eventos/pedidos/${e.id}` : `/eventos/${e.id}`);
 
 // Estado de cada cargo: texto y colores del tema.
 export const ESTADOS: Record<EstadoCargo, { etiqueta: string; clase: string }> = {

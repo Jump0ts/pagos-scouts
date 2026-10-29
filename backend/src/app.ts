@@ -13,6 +13,8 @@ import { importacionesRouter } from "./modules/importaciones/importaciones.route
 import { healthRouter } from "./modules/health/health.routes.js";
 import { invitacionesRouter } from "./modules/invitaciones/invitaciones.routes.js";
 import { movimientosRouter } from "./modules/movimientos/movimientos.routes.js";
+import { pedidosRouter } from "./modules/pedidos/pedidos.routes.js";
+import { publicoRouter } from "./modules/pedidos/publico.routes.js";
 import { restablecerRouter } from "./modules/restablecer/restablecer.routes.js";
 import { seccionesRouter } from "./modules/secciones/secciones.routes.js";
 import { usuariosRouter } from "./modules/usuarios/usuarios.routes.js";
@@ -33,6 +35,8 @@ export const createApp = () => {
   app.use("/api/auth", authRouter);
   app.use("/api/invitaciones", invitacionesRouter);
   app.use("/api/restablecer", restablecerRouter);
+  // D-67: el formulario publico de los pedidos, sin sesion.
+  app.use("/api/publico/pedido", publicoRouter);
   app.use("/api/secciones", requiereSesion, requiereGrupo, seccionesRouter);
   app.use("/api/cursos", requiereSesion, requiereGrupo, cursosRouter);
   app.use("/api/educandos", requiereSesion, requiereGrupo, educandosRouter);
@@ -40,6 +44,7 @@ export const createApp = () => {
   app.use("/api/eventos", requiereSesion, requiereGrupo, eventosRouter);
   app.use("/api/importaciones", requiereSesion, requiereGrupo, importacionesRouter);
   app.use("/api/movimientos", requiereSesion, requiereGrupo, movimientosRouter);
+  app.use("/api/pedidos", requiereSesion, requiereGrupo, pedidosRouter);
   app.use("/api/usuarios", requiereSesion, requiereGrupo, requiereRol("ADMIN"), usuariosRouter);
 
   app.use("/api", notFoundHandler);
