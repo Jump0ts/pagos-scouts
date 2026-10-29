@@ -6,6 +6,7 @@ const PESTANAS = [
   { a: "personas", texto: "Personas", soloAdmin: true },
   { a: "secciones", texto: "Secciones", soloAdmin: true },
   { a: "mi-cuenta", texto: "Mi cuenta", soloAdmin: false },
+  { a: "instalar", texto: "Instalar la app", soloAdmin: false },
 ];
 
 // D-24: Ajustes con pestañas; quien no administra el grupo solo ve "Mi cuenta".

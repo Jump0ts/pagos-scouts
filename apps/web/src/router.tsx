@@ -19,6 +19,7 @@ import { FormularioPedidoPagina } from "./features/pedidos/FormularioPedidoPagin
 import { PedidoDetallePagina } from "./features/pedidos/PedidoDetallePagina";
 import { PedidoFormularioPagina } from "./features/pedidos/PedidoFormularioPagina";
 import { SeccionesAjustes } from "./features/secciones/SeccionesAjustes";
+import { InstalarAjustes } from "./features/pwa/InstalarAjustes";
 import { PersonasAjustes } from "./features/usuarios/PersonasAjustes";
 import { AppLayout } from "./layout/AppLayout";
 
@@ -62,6 +63,7 @@ export const rutas = [
             children: [
               { index: true, element: <AjustesInicio /> },
               { path: "mi-cuenta", element: <MiCuenta /> },
+              { path: "instalar", element: <InstalarAjustes /> },
               {
                 element: <SoloRol roles={["ADMIN"]} />,
                 children: [
