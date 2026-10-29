@@ -184,9 +184,10 @@ Cada parte va en su `feature/*`, la pruebas aislada en `pre` y, cuando un bloque
 | 4 | Importar movimientos + clasificación automática | Subir el Excel de Unicaja y ver qué se clasifica solo |
 | 5 | Dudas + clasificación manual + aprendizaje | Resolver dudas, repartir un pago entre hermanos, ver que se recuerda |
 | 6 | Pago manual + consulta y exportación por evento | Apuntar un pago en efectivo; exportar el estado de un evento |
-| 7 | PWA, pulido visual y accesibilidad | Instalarla en Android y en iPhone |
+| 7 | Pedidos con formulario propio (D-66 a D-71) | Crear un pedido, rellenar el formulario desde el móvil, revisar y exportar para el proveedor |
+| 8 | PWA, pulido visual y accesibilidad | Instalarla en Android y en iPhone |
 
-**Release 0.1.0** = partes 0–6 (lo mínimo útil). La parte 7 puede ir en la 0.2.0.
+**Release 0.1.0** = partes 0–6 (lo mínimo útil). Las partes 7 y 8 pueden ir en la 0.2.0.
 
 ## 9. Diagrama para el currículum
 
