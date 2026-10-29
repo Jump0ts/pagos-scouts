@@ -9,6 +9,8 @@ still change.
 ### Changed
 - Production server: when a security update needs it (mainly the kernel), the server reboots on its own at 04:30
   UTC, after the nightly backup (D-64).
+- Production guide: the daily backup download runs when the PC is turned on if it was off at 09:00, so the PC no
+  longer needs to stay on (D-65).
 
 ## [0.1.1] - 2026-10-28
 

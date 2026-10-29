@@ -230,7 +230,13 @@ schtasks /Create /SC DAILY /ST 09:00 /TN "Pagos Scouts copias" /TR "powershell -
 
 - Solo añade copias nuevas, verifica cada una con SHA-256 y **nunca** replica los borrados del servidor.
 - Falla (la tarea sale en rojo) si la última copia tiene más de 36 h: el servidor ha dejado de hacerlas.
-- En *Programador de tareas*, activa «Ejecutar la tarea lo antes posible si se omitió un inicio programado».
+- No hace falta dejar el PC encendido (D-65): si a las 09:00 estaba apagado, la tarea se lanza al encenderlo. Eso lo
+  activa esta línea en PowerShell (`schtasks` no tiene la opción); el servidor guarda 7 diarias y 4 semanales, así que
+  basta con encender el PC una vez por semana.
+
+```powershell
+$t = Get-ScheduledTask "Pagos Scouts copias"; $t.Settings.StartWhenAvailable = $true; Set-ScheduledTask $t
+```
 
 Una vez al mes, comprueba que la última copia se restaura entera (descifra en el PC y la carga en un Postgres
 desechable en el servidor, sin tocar la base real):
