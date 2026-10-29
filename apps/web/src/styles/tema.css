@@ -49,6 +49,12 @@
   }
 }
 
+/* Filas de pestañas y filtros que se desplazan de lado en el móvil: sin barra de desplazamiento a la vista. */
+@utility sin-barra {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
 @layer base {
   body { @apply bg-fondo text-tinta font-sans antialiased; }
   :focus-visible { @apply outline-2 outline-offset-2 outline-bosque; }

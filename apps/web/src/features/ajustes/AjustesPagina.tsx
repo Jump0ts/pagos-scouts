@@ -6,7 +6,7 @@ const PESTANAS = [
   { a: "personas", texto: "Personas", soloAdmin: true },
   { a: "secciones", texto: "Secciones", soloAdmin: true },
   { a: "mi-cuenta", texto: "Mi cuenta", soloAdmin: false },
-  { a: "instalar", texto: "Instalar la app", soloAdmin: false },
+  { a: "instalar", texto: "Instalar", soloAdmin: false },
 ];
 
 // D-24: Ajustes con pestañas; quien no administra el grupo solo ve "Mi cuenta".
@@ -18,7 +18,7 @@ export const AjustesPagina = () => {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="font-display text-3xl font-bold tracking-tight">Ajustes</h1>
-      <nav aria-label="Ajustes" className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1">
+      <nav aria-label="Ajustes" className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 sin-barra">
         {visibles.map((p) => (
           <NavLink
             key={p.a}
