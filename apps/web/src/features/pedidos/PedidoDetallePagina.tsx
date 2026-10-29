@@ -242,7 +242,7 @@ export const PedidoDetallePagina = () => {
         {resumen.debidoCentimos > 0 && <BarraProgreso valor={resumen.pagadoCentimos} total={resumen.debidoCentimos} etiqueta="Cobrado del pedido" />}
       </section>
 
-      <div role="tablist" aria-label="Vistas del pedido" onKeyDown={teclas} className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sin-barra">
+      <div role="tablist" aria-label="Vistas del pedido" onKeyDown={teclas} className="-m-1 flex gap-2 overflow-x-auto p-1 sin-barra">
         {pestanas.map((p) => (
           <button
             key={p.valor}

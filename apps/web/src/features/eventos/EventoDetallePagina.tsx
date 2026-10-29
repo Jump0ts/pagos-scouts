@@ -182,7 +182,7 @@ export const EventoDetallePagina = () => {
       </section>
 
       <div className="flex flex-col gap-2">
-        <div role="group" aria-label="Filtrar por estado" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sin-barra">
+        <div role="group" aria-label="Filtrar por estado" className="-m-1 flex gap-2 overflow-x-auto p-1 sin-barra">
           {FILTROS.map((f) => (
             <button
               key={f.etiqueta}
@@ -199,7 +199,7 @@ export const EventoDetallePagina = () => {
           ))}
         </div>
         {delEvento.length > 1 && (
-          <div role="group" aria-label="Filtrar por sección" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sin-barra">
+          <div role="group" aria-label="Filtrar por sección" className="-m-1 flex gap-2 overflow-x-auto p-1 sin-barra">
             {[{ id: null, nombre: "Todas", color: null }, ...delEvento].map((s) => (
               <button
                 key={s.id ?? "todas"}

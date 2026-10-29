@@ -18,7 +18,7 @@ export const AjustesPagina = () => {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="font-display text-3xl font-bold tracking-tight">Ajustes</h1>
-      <nav aria-label="Ajustes" className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 sin-barra">
+      <nav aria-label="Ajustes" className="-m-1 flex gap-1 overflow-x-auto p-1 sin-barra">
         {visibles.map((p) => (
           <NavLink
             key={p.a}
