@@ -96,6 +96,16 @@ const MOVIMIENTO = {
   clasificadoEn: null,
 };
 const CONTADORES = { dudas: 1, clasificados: 0, otros: 0 };
+const PASO = {
+  origen: { id: "c1", nombre: "2026-27" },
+  destino: "2027-28",
+  destinoExiste: false,
+  secciones: SECCIONES,
+  filas: [
+    { educandoId: "e1", nombre: "Nora", apellidos: "Vidal Soler", seccionActualId: "s2", edad: 11, propuesta: { seccionId: "s3", motivo: "SUBE" } },
+    { educandoId: "e2", nombre: "Bruno", apellidos: "Vidal Soler", seccionActualId: "s3", edad: null, propuesta: { seccionId: "s3", motivo: "SIN_FECHA" } },
+  ],
+};
 
 const API = {
   "GET /auth/yo": { cuerpo: PERFIL_ADMIN },
@@ -108,6 +118,8 @@ const API = {
   "GET /movimientos?estado=DUDA": { cuerpo: { contadores: CONTADORES, movimientos: [MOVIMIENTO] } },
   "GET /usuarios": { cuerpo: { miembros: [], invitaciones: [] } },
   "GET /health": { cuerpo: { status: "ok", env: "test", db: "ok" } },
+  "GET /cursos": { cuerpo: { cursos: [{ id: "c1", nombre: "2026-27", activo: true }], sugerido: "2026-27" } },
+  "GET /cursos/paso": { cuerpo: PASO },
 };
 
 describe("accesibilidad (D-75)", () => {
@@ -127,6 +139,8 @@ describe("accesibilidad (D-75)", () => {
     ["Movimientos", "/movimientos", "Movimientos"],
     ["Ajustes · Personas", "/ajustes/personas", "Ajustes"],
     ["Ajustes · Instalar", "/ajustes/instalar", "Instalar la app"],
+    ["Ajustes · Curso", "/ajustes/curso", "Curso"],
+    ["Paso de curso", "/ajustes/curso/paso", "Paso de 2026-27 a 2027-28"],
   ])("%s", async (_, ruta, titulo) => {
     simularApi(API);
     renderizar(ruta);

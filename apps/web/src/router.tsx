@@ -5,6 +5,8 @@ import { InvitacionPagina } from "./features/auth/InvitacionPagina";
 import { LoginPagina } from "./features/auth/LoginPagina";
 import { RestablecerPagina } from "./features/auth/RestablecerPagina";
 import { RutaProtegida, SoloRol } from "./features/auth/RutaProtegida";
+import { CursoAjustes } from "./features/cursos/CursoAjustes";
+import { PasoCursoPagina } from "./features/cursos/PasoCursoPagina";
 import { EducandosPagina } from "./features/educandos/EducandosPagina";
 import { EventoDetallePagina } from "./features/eventos/EventoDetallePagina";
 import { EventoFormularioPagina } from "./features/eventos/EventoFormularioPagina";
@@ -69,6 +71,8 @@ export const rutas = [
                 children: [
                   { path: "personas", element: <PersonasAjustes /> },
                   { path: "secciones", element: <SeccionesAjustes /> },
+                  { path: "curso", element: <CursoAjustes /> },
+                  { path: "curso/paso", element: <PasoCursoPagina /> },
                 ],
               },
             ],

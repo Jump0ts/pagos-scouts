@@ -15,9 +15,9 @@ export const PERFIL_ADMIN: Perfil = {
 };
 
 export const SECCIONES = [
-  { id: "s1", nombre: "Castores", orden: 0, color: "castores", archivada: false },
-  { id: "s2", nombre: "Manada", orden: 1, color: "manada", archivada: false },
-  { id: "s3", nombre: "Tropa", orden: 2, color: "tropa", archivada: false },
+  { id: "s1", nombre: "Castores", orden: 0, color: "castores", edadMaxima: 7, archivada: false },
+  { id: "s2", nombre: "Manada", orden: 1, color: "manada", edadMaxima: 10, archivada: false },
+  { id: "s3", nombre: "Tropa", orden: 2, color: "tropa", edadMaxima: 13, archivada: false },
 ];
 
 type Respuesta = { status?: number; cuerpo?: unknown };

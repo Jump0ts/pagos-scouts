@@ -6,6 +6,18 @@ still change.
 
 ## [Unreleased]
 
+### Added
+- **Part 9 — moving to the next school year (D-79 to D-84).** A wizard in Settings → Course, for admins only. It
+  proposes the section of each child for the next year from their birth year and the maximum age of each section
+  (editable in Sections; by default 7, 10, 13, 16 and 21, and none for Scouters). Children without a birth date stay
+  in their section unless changed by hand. Each child has a "stays" checkbox, and those who age out of the last section
+  appear as finishing. Nothing is saved until confirming; then the new year becomes the active one and the previous
+  one stays available to look up.
+
+### Changed
+- Bank payments are now matched against pending debts from any school year, not only the active one, and the family
+  sheet lists what is still owed from previous years (D-82).
+
 ### Security
 - Zod upgraded from 3 to 4 in the API and the web, which fixes a possible memory exhaustion when validating oversized
   lists (D-78). Custom messages are kept and now also show when a field arrives with the wrong type.

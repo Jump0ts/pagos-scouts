@@ -5,6 +5,7 @@ import { cx } from "@/utils/cx";
 const PESTANAS = [
   { a: "personas", texto: "Personas", soloAdmin: true },
   { a: "secciones", texto: "Secciones", soloAdmin: true },
+  { a: "curso", texto: "Curso", soloAdmin: true },
   { a: "mi-cuenta", texto: "Mi cuenta", soloAdmin: false },
   { a: "instalar", texto: "Instalar", soloAdmin: false },
 ];

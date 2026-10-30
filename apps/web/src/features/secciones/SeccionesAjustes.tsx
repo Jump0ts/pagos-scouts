@@ -52,7 +52,7 @@ export const SeccionesAjustes = () => {
         <div>
           <h2 id="titulo-secciones" className="font-display text-xl font-bold">Secciones</h2>
           <p className="max-w-prose text-sm text-suave">
-            De la más pequeña a la más mayor: este orden se usa al pasar de curso y para el precio del segundo hermano.
+            De la más pequeña a la más mayor: este orden y la edad máxima de cada una se usan al pasar de curso; el orden, también para el precio del segundo hermano.
           </p>
         </div>
         <Boton tamano="pequeno" onClick={() => setDialogo({ abierto: true })}>
@@ -68,7 +68,13 @@ export const SeccionesAjustes = () => {
             <span className={cx("size-3 shrink-0 rounded-full", FONDO_SECCION[seccion.color], seccion.archivada && "opacity-40")} aria-hidden />
             <span className="min-w-0 flex-1">
               <span className={cx("block truncate font-semibold", seccion.archivada && "text-suave")}>{seccion.nombre}</span>
-              {seccion.archivada && <span className="text-xs text-suave">Archivada: no se puede asignar a nadie</span>}
+              <span className="block text-xs text-suave">
+                {seccion.archivada
+                  ? "Archivada: no se puede asignar a nadie"
+                  : seccion.edadMaxima === null
+                    ? "Sin edad máxima"
+                    : `Hasta los ${seccion.edadMaxima} años`}
+              </span>
             </span>
             <BotonIcono etiqueta={`Subir ${seccion.nombre}`} onClick={() => mover(i, -1)} disabled={i === 0 || ordenar.isPending}>
               <ArrowUp className="size-4" aria-hidden />

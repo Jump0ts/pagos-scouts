@@ -151,7 +151,10 @@ export const FichaFamiliaDialogo = ({ familiaId, onCerrar }: { familiaId: string
                           <ul className="mt-2 flex flex-col gap-1" aria-label={`Pagos de ${hijo.nombre}`}>
                             {hijo.cargos.map((c) => (
                               <li key={c.id} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
-                                <span className="min-w-0 truncate">{c.evento.nombre}</span>
+                                <span className="min-w-0 truncate">
+                                  {c.evento.nombre}
+                                  {c.cursoAnterior && <span className="text-suave tabular-nums"> · {c.cursoAnterior}</span>}
+                                </span>
                                 <span className="text-suave tabular-nums">
                                   {c.estado === "PARCIAL" ? `${euros(c.pagadoCentimos)} de ${euros(c.importeCentimos)}` : euros(c.importeCentimos)}
                                 </span>
