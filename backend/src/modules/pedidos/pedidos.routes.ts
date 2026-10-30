@@ -8,7 +8,7 @@ import { generarToken } from "../../utils/tokens.js";
 import { validar } from "../../utils/validar.js";
 import { cursoActivo } from "../cursos/cursos.utils.js";
 import { estadoDe, importeDe, pagadoPorCargo } from "../eventos/cargos.utils.js";
-import { LineaNoValida, prepararLineas, resumenProveedor, totalDe, type Eleccion, type LineaPreparada } from "./pedidos.calculo.js";
+import { filasProveedor, LineaNoValida, prepararLineas, resumenProveedor, totalDe, type Eleccion, type LineaPreparada } from "./pedidos.calculo.js";
 import { excelPorPersona, excelProveedor } from "./pedidos.exportar.js";
 import { buscarPersona } from "./pedidos.revision.js";
 import { aceptarEnvioSchema, anadirLineasSchema, crearPedidoSchema, editarPedidoSchema, exportarPedidoSchema } from "./pedidos.schema.js";
@@ -336,7 +336,7 @@ pedidosRouter.get(
     const lineasDe = (c: (typeof cargos)[number]) => c.lineas.map((l) => ({ articulo: l.articulo.nombre, elecciones: l.elecciones as Eleccion[] }));
     let contenido: Buffer;
     if (vista === "proveedor") {
-      contenido = excelProveedor({ pedido: evento.nombre, resumen: resumenProveedor(cargos.flatMap(lineasDe)) });
+      contenido = excelProveedor({ pedido: evento.nombre, filas: filasProveedor(cargos.flatMap(lineasDe)) });
     } else {
       const [curso, pagados] = await Promise.all([
         prisma.curso.findUniqueOrThrow({ where: { id: evento.cursoId }, select: { nombre: true } }),

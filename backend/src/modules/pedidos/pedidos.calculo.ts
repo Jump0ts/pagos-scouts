@@ -101,3 +101,34 @@ export const resumenProveedor = (lineas: { articulo: string; elecciones: Eleccio
     a.articulo.localeCompare(b.articulo, "es") || a.opciones.localeCompare(b.opciones, "es", { numeric: true });
   return { unidades: [...unidades.values()].sort(orden), textos: textos.sort(orden) };
 };
+
+export type FilaProveedor = { articulo: string; opciones: string; unidades: number; nombre: string };
+
+/**
+ * El Excel para el proveedor, en una sola tabla: por articulo y opciones, una fila con las unidades sin texto y una
+ * fila por cada texto a estampar (si el mismo texto se repite con las mismas opciones, se suman). Sin decir de quien
+ * son. Con varias opciones de texto, el nombre las junta: "Nombre: Nora · Numero: 7".
+ */
+export const filasProveedor = (lineas: { articulo: string; elecciones: Eleccion[] }[]): FilaProveedor[] => {
+  const filas = new Map<string, FilaProveedor>();
+  for (const l of lineas) {
+    const opciones = l.elecciones
+      .filter((e) => e.tipo === "LISTA")
+      .map((e) => `${e.opcion}: ${e.valor}`)
+      .join(" · ");
+    const textos = l.elecciones.filter((e) => e.tipo === "TEXTO");
+    const nombre = textos.length === 1 ? textos[0].valor : textos.map((e) => `${e.opcion}: ${e.valor}`).join(" · ");
+    const clave = [l.articulo, opciones, nombre].join("\u0000");
+    const fila = filas.get(clave) ?? { articulo: l.articulo, opciones, unidades: 0, nombre };
+    fila.unidades += 1;
+    filas.set(clave, fila);
+  }
+  // Por articulo y opciones (tallas en orden natural); dentro, primero las que van sin texto y luego los textos.
+  return [...filas.values()].sort(
+    (a, b) =>
+      a.articulo.localeCompare(b.articulo, "es") ||
+      a.opciones.localeCompare(b.opciones, "es", { numeric: true }) ||
+      Number(Boolean(a.nombre)) - Number(Boolean(b.nombre)) ||
+      a.nombre.localeCompare(b.nombre, "es"),
+  );
+};

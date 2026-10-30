@@ -1,7 +1,7 @@
 import * as XLSX from "xlsx";
 import { textoParaExcel as t } from "../../utils/hoja.js";
 import type { EstadoPago } from "../eventos/cargos.utils.js";
-import type { resumenProveedor } from "./pedidos.calculo.js";
+import type { FilaProveedor } from "./pedidos.calculo.js";
 
 // D-66: dos Excel de un pedido. Se crean en memoria y nunca se guardan; todo texto pasa por textoParaExcel (D-70).
 
@@ -57,24 +57,14 @@ export const excelPorPersona = ({ pedido, curso, personas }: { pedido: string; c
   return libroCon([["Por persona", hoja]]);
 };
 
-/** Para el proveedor: unidades por articulo y opciones, y los textos a estampar sin decir de quien son. */
-export const excelProveedor = ({ pedido, resumen }: { pedido: string; resumen: ReturnType<typeof resumenProveedor> }) => {
-  const total = resumen.unidades.reduce((n, u) => n + u.unidades, 0);
-  const unidades = XLSX.utils.aoa_to_sheet([
-    [t(pedido)],
-    [`${total} ${total === 1 ? "unidad" : "unidades"}`],
-    [],
-    ["Artículo", "Opciones", "Unidades"],
-    ...resumen.unidades.map((u) => [t(u.articulo), t(u.opciones), u.unidades]),
-  ]);
-  unidades["!cols"] = [{ wch: 24 }, { wch: 40 }, { wch: 10 }];
-  const textos = XLSX.utils.aoa_to_sheet([
-    ["Artículo", "Opciones", "Texto"],
-    ...resumen.textos.map((x) => [t(x.articulo), t(x.opciones), t(x.texto)]),
-  ]);
-  textos["!cols"] = [{ wch: 24 }, { wch: 40 }, { wch: 30 }];
-  return libroCon([
-    ["Unidades", unidades],
-    ["Textos", textos],
-  ]);
+/** Para el proveedor, todo en una hoja: articulo, opciones, unidades y el nombre a estampar (vacio si no lleva). */
+export const excelProveedor = ({ pedido, filas }: { pedido: string; filas: FilaProveedor[] }) => {
+  const total = filas.reduce((n, f) => n + f.unidades, 0);
+  const cabecera = ["Artículo", "Opciones", "Unidades", "Nombre"];
+  const resumen = [[t(pedido)], [`${total} ${total === 1 ? "unidad" : "unidades"}`], []];
+  const hoja = XLSX.utils.aoa_to_sheet([...resumen, cabecera, ...filas.map((f) => [t(f.articulo), t(f.opciones), f.unidades, t(f.nombre)])]);
+  hoja["!cols"] = [{ wch: 24 }, { wch: 36 }, { wch: 10 }, { wch: 30 }];
+  const primera = resumen.length;
+  hoja["!autofilter"] = { ref: XLSX.utils.encode_range({ s: { r: primera, c: 0 }, e: { r: primera + filas.length, c: cabecera.length - 1 } }) };
+  return libroCon([["Pedido", hoja]]);
 };
