@@ -38,15 +38,16 @@ export const fichaFamilia = async (familiaId: string, grupoId: string, cursoId: 
             where: { cursoId: cursoId ?? "" },
             select: { seccionId: true, bajaEn: true },
           },
-          // D-41: lo que debe y lo que ha pagado en los eventos del curso activo.
+          // D-41: lo que debe y lo que ha pagado en los eventos del curso activo; D-82: y lo que quede pendiente de
+          // cursos anteriores, que tambien se puede cobrar.
           cargos: {
-            where: { estado: "ACTIVO", evento: { cursoId: cursoId ?? "" } },
+            where: { estado: "ACTIVO" },
             orderBy: { evento: { fechaInicio: "asc" } },
             select: {
               id: true,
               importeCalculadoCentimos: true,
               importeAjustadoCentimos: true,
-              evento: { select: { id: true, nombre: true } },
+              evento: { select: { id: true, nombre: true, cursoId: true, curso: { select: { nombre: true } } } },
               asignaciones: { select: { importeCentimos: true } },
             },
           },
@@ -73,9 +74,21 @@ export const fichaFamilia = async (familiaId: string, grupoId: string, cursoId: 
       ...e,
       seccionId: matriculas[0]?.seccionId ?? null,
       deBaja: Boolean(matriculas[0]?.bajaEn),
-      cargos: cargos.map((c) => {
+      cargos: cargos.flatMap((c) => {
         const pagado = c.asignaciones.reduce((n, a) => n + a.importeCentimos, 0);
-        return { id: c.id, evento: c.evento, importeCentimos: importeDe(c), pagadoCentimos: pagado, estado: estadoDe(importeDe(c), pagado) };
+        const deOtroCurso = c.evento.cursoId !== cursoId;
+        // De otros cursos, solo lo que sigue pendiente o a medias.
+        if (deOtroCurso && pagado >= importeDe(c)) return [];
+        return [
+          {
+            id: c.id,
+            evento: { id: c.evento.id, nombre: c.evento.nombre },
+            cursoAnterior: deOtroCurso ? c.evento.curso.nombre : null,
+            importeCentimos: importeDe(c),
+            pagadoCentimos: pagado,
+            estado: estadoDe(importeDe(c), pagado),
+          },
+        ];
       }),
     })),
     pagos: pagos.map((p) => ({ ...p, fecha: p.fecha?.toISOString().slice(0, 10) ?? null })),

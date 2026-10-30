@@ -9,10 +9,18 @@ const nombreSeccion = z
 
 const colorSeccion = z.enum(COLORES_SECCION, { error: "Elige un color de la lista" });
 
-export const crearSeccionSchema = z.object({ nombre: nombreSeccion, color: colorSeccion });
+// D-79: hasta que edad se esta en la seccion; vacia (null) en las que no se sale por edad, como Scouters.
+const edadMaxima = z
+  .number({ error: "Escribe una edad" })
+  .int("Escribe una edad sin decimales")
+  .min(3, "Escribe una edad de 3 años o más")
+  .max(99, "Escribe una edad de menos de 100 años")
+  .nullable();
+
+export const crearSeccionSchema = z.object({ nombre: nombreSeccion, color: colorSeccion, edadMaxima: edadMaxima.optional() });
 
 export const editarSeccionSchema = z
-  .object({ nombre: nombreSeccion, color: colorSeccion, archivada: z.boolean() })
+  .object({ nombre: nombreSeccion, color: colorSeccion, edadMaxima, archivada: z.boolean() })
   .partial()
   .refine((datos) => Object.keys(datos).length > 0, { message: "No hay nada que cambiar" });
 

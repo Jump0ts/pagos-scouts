@@ -1,6 +1,5 @@
 import type { Prisma } from "@prisma/client";
 import { persona, tokens } from "../../utils/nombres.js";
-import { cursoActivo } from "../cursos/cursos.utils.js";
 import { importeDe } from "../eventos/cargos.utils.js";
 import type { BancoLeido, MovimientoLeido } from "./banco.parser.js";
 import { clasificar, clavePagador, descontar, type Apuntado, type CargoPendiente, type Contexto } from "./clasificacion.js";
@@ -8,28 +7,25 @@ import type { CargoDeMovimiento, ResumenImportacion } from "./movimientos.types.
 
 type Db = Prisma.TransactionClient;
 
-/** Todo lo que necesita el motor: familias, pagadores aprendidos y lo pendiente del curso activo (D-43). */
+/** Todo lo que necesita el motor: familias, pagadores aprendidos y lo pendiente de cualquier curso (D-43, D-82). */
 export const cargarContexto = async (db: Db, grupoId: string) => {
-  const curso = await cursoActivo(grupoId, db);
   const [familias, pagadores, cargos, marcadas, apuntados] = await Promise.all([
     db.familia.findMany({
       where: { grupoId },
       select: { id: true, nombre: true, responsables: { select: { nombreCompleto: true } }, educandos: { select: { apellidos: true } } },
     }),
     db.pagador.findMany({ where: { grupoId }, select: { clave: true, familiaId: true } }),
-    curso
-      ? db.cargo.findMany({
-          where: { estado: "ACTIVO", evento: { grupoId, cursoId: curso.id } },
-          select: {
-            id: true,
-            importeCalculadoCentimos: true,
-            importeAjustadoCentimos: true,
-            evento: { select: { nombre: true, fechaInicio: true } },
-            educando: { select: { nombre: true, apellidos: true, familiaId: true } },
-            asignaciones: { select: { importeCentimos: true } },
-          },
-        })
-      : [],
+    db.cargo.findMany({
+      where: { estado: "ACTIVO", evento: { grupoId } },
+      select: {
+        id: true,
+        importeCalculadoCentimos: true,
+        importeAjustadoCentimos: true,
+        evento: { select: { nombre: true, fechaInicio: true } },
+        educando: { select: { nombre: true, apellidos: true, familiaId: true } },
+        asignaciones: { select: { importeCentimos: true } },
+      },
+    }),
     db.movimiento.findMany({ where: { grupoId, origen: "LISTADO", familiaId: { not: null } }, select: { familiaId: true } }),
     // D-51: lo apuntado a mano o marcado en el listado que todavia no se ha cruzado con el banco.
     db.movimiento.findMany({
