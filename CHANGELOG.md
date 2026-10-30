@@ -6,6 +6,10 @@ still change.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-30
+
+Orders with their own form for families, an installable app and an accessibility and finish pass.
+
 ### Added
 - **Part 7 — orders (D-66 to D-71).** A new kind of event for on-demand orders (sweatshirts, T-shirts, scarves…): a
   catalogue of articles with a price, a maximum number of units per person and options to choose from (lists such as

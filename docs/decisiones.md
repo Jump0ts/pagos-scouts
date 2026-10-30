@@ -152,6 +152,12 @@ No se borra la antigua.
 | D-75 | **Accesibilidad comprobada en los tests y a mano** | axe revisa en los tests de la web las pantallas principales y la CI falla si aparece un problema. Además, revisión a mano de cada pantalla (teclado, foco visible, lector de pantalla, contraste en claro y oscuro, tamaño de los botones en el móvil y movimiento reducido) y pulido de estados vacíos, de carga y de error. |
 | D-76 | **Acabado de app en el móvil** | Completa D-75 tras revisarla con impeccable y las guías de móvil nativo y de detalles de interfaz. Sin destello al tocar, sin retraso de doble toque, sin selección de texto al mantener pulsado un control y sin «tirar para recargar». Los botones de quitar miden al menos 36 px. Los botones se hunden un poco al pulsarlos (escala 0,97). Los diálogos suben desde abajo en el móvil y aparecen con un fundido en el ordenador (unos 0,2 s); con «reducir movimiento», solo fundido y sin hundirse. La selección de texto y el cursor usan el verde del tema. Sin cambios de colores, tipografía ni estética (D-7). |
 
+## Bloque 14 — Pruebas en el móvil y release 0.2.0 (2026-10-30)
+
+| # | Decisión | Detalle |
+|---|---|---|
+| D-77 | **Probar en el móvil con un túnel puntual; `pre` no va en el droplet de producción** | Probar la PWA instalada exige HTTPS. Se descarta montar `pre` en el droplet de producción: tiene datos reales de menores, a `pre` llega código sin release y 1 GB de memoria no da para dos copias. Para pruebas concretas se abre un túnel puntual de Cloudflare (`cloudflared tunnel --url`) a la web compilada del PC, con datos inventados, y se cierra al terminar. Montar `pre` en el servidor de casa (D-13), con Cloudflare Tunnel en vez de abrir puertos, queda para cuando haya más grupos además del primero. |
+
 Los importes se guardan en céntimos (enteros), para no tener errores de redondeo.
 
 **Nota sobre ramas:** la parte 1 sale de `pre` y no de `develop`, porque necesita el esqueleto de la parte 0, que aún
