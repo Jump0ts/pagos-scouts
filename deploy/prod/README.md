@@ -31,11 +31,12 @@ ningún secreto pasa por el chat ni por el repositorio.
 | Exposición | Solo el puerto 443 (y el 80, que redirige). La base de datos y la API no publican puertos y viven en una red sin Internet; la web solo escucha en `127.0.0.1`. |
 | Altas | No hay registro abierto: los grupos se crean con `crear-grupo` en el servidor y las personas entran por invitación (D-11). |
 | Fuerza bruta | nginx limita los POST de `/api/auth/`, `/api/invitaciones/` y `/api/restablecer/` a 10 por minuto y por IP, y el resto de `/api/` a 10 por segundo. La API bloquea además un email tras 5 fallos. |
+| Formulario de pedidos | Lo único público sin sesión (`/api/publico/`, D-67 y D-69): nginx lo limita a 20 peticiones por minuto y por IP con cuerpos de 32 KB como mucho, y la API pone sus propios límites, un justificante firmado con tiempo mínimo, un campo trampa y un tope de envíos pendientes. Nada de lo enviado cuenta hasta que Tesorería lo acepta. |
 | Contenedores | Sin root, sistema de ficheros de solo lectura, sin capabilities, `no-new-privileges` y límite de memoria. |
 | Cadena de suministro | Acciones de GitHub fijadas por SHA; se despliega por **digest** y solo si la atestación de procedencia de la imagen se verifica. |
 | Clave SSH de la CI | Con `restrict` y un **comando forzado** (de root, `deploy` no lo puede cambiar): solo puede pedir `deploy <digest> <usuario>`. Sin shell, túneles ni scp. El repositorio de imágenes está fijado en el servidor. |
 | Aprobación | Cada merge a `master` que cambie algo desplegable construye la imagen y el despliegue **espera tu aprobación** en el entorno `production`, que solo admite `master`. |
-| Servidor | SSH solo con clave, `deploy` sin `sudo`, actualizaciones de seguridad automáticas, swap de 1 GB. |
+| Servidor | SSH solo con clave, `deploy` sin `sudo`, actualizaciones de seguridad automáticas con reinicio de madrugada si lo piden (D-64), swap de 1 GB. |
 | Copias | Cifradas con `age` antes de tocar el disco: el servidor solo tiene la clave **pública**. Diarias, antes de cada migración, y bajadas a tu PC con verificación SHA-256. |
 
 ## 2. Qué hay dónde
@@ -230,7 +231,13 @@ schtasks /Create /SC DAILY /ST 09:00 /TN "Pagos Scouts copias" /TR "powershell -
 
 - Solo añade copias nuevas, verifica cada una con SHA-256 y **nunca** replica los borrados del servidor.
 - Falla (la tarea sale en rojo) si la última copia tiene más de 36 h: el servidor ha dejado de hacerlas.
-- En *Programador de tareas*, activa «Ejecutar la tarea lo antes posible si se omitió un inicio programado».
+- No hace falta dejar el PC encendido (D-65): si a las 09:00 estaba apagado, la tarea se lanza al encenderlo. Eso lo
+  activa esta línea en PowerShell (`schtasks` no tiene la opción); el servidor guarda 7 diarias y 4 semanales, así que
+  basta con encender el PC una vez por semana.
+
+```powershell
+$t = Get-ScheduledTask "Pagos Scouts copias"; $t.Settings.StartWhenAvailable = $true; Set-ScheduledTask $t
+```
 
 Una vez al mes, comprueba que la última copia se restaura entera (descifra en el PC y la carga en un Postgres
 desechable en el servidor, sin tocar la base real):
@@ -260,6 +267,17 @@ aprobación). Las migraciones solo van hacia delante: se escriben compatibles co
 
 **Un despliegue hace, en orden:** comprobar la configuración → copia → migraciones → API nueva (si no queda sana, vuelve
 sola a la anterior) → web.
+
+### Actualizar el nginx del servidor
+
+Los despliegues no tocan el nginx del servidor. Cuando cambia `servidor/scouts.conf` (por ejemplo, el límite del
+formulario de pedidos, D-69), **no** relances `arranque.sh`: sobrescribiría el bloque HTTPS que añadió Certbot. Como
+root, añade a mano lo nuevo en `/etc/nginx/sites-available/scouts.conf` (las líneas `limit_req_zone` arriba, junto a
+las otras, y los `location` dentro del bloque `server` de HTTPS) y comprueba antes de recargar:
+
+```bash
+nginx -t && systemctl reload nginx
+```
 
 ### Restaurar de verdad (desastre)
 

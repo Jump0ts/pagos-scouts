@@ -35,8 +35,8 @@ export const Confirmar = ({ abierto, onCambiar, titulo, descripcion, accion, pel
   return (
     <AlertDialog.Root open={abierto} onOpenChange={(v) => { setError(null); onCambiar(v); }}>
       <AlertDialog.Portal>
-        <AlertDialog.Overlay className="fixed inset-0 z-40 bg-tinta/40 backdrop-blur-[2px]" />
-        <AlertDialog.Content className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-md -translate-y-1/2 rounded-3xl bg-superficie p-6 shadow-2xl ring-1 ring-linea">
+        <AlertDialog.Overlay className="fixed inset-0 z-40 bg-tinta/40 backdrop-blur-[2px] data-[state=open]:animate-[fundido-entra_200ms_var(--ease-salida)] data-[state=closed]:animate-[fundido-sale_150ms_var(--ease-salida)]" />
+        <AlertDialog.Content className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-md -translate-y-1/2 rounded-3xl bg-superficie p-6 shadow-2xl ring-1 ring-linea data-[state=open]:animate-[dialogo-entra_200ms_var(--ease-salida)] data-[state=closed]:animate-[fundido-sale_150ms_var(--ease-salida)]">
           <AlertDialog.Title className="font-display text-xl font-bold text-balance">{titulo}</AlertDialog.Title>
           <AlertDialog.Description className="mt-2 text-suave">{descripcion}</AlertDialog.Description>
           {error && (

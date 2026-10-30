@@ -56,7 +56,7 @@ const valoresIniciales = (seccionIds: string[], detalle?: DetalleEvento): Datos 
   const e = detalle?.evento;
   return {
     nombre: e?.nombre ?? "",
-    tipo: e?.tipo ?? "TODA_SECCION",
+    tipo: e?.tipo === "CON_APUNTADOS" ? "CON_APUNTADOS" : "TODA_SECCION",
     fechaInicio: e?.fechaInicio ?? new Date().toISOString().slice(0, 10),
     fechaFin: e?.fechaFin ?? "",
     secciones: Object.fromEntries(

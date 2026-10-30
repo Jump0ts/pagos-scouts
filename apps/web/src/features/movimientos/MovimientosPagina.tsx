@@ -63,7 +63,7 @@ export const MovimientosPagina = () => {
       </div>
       {aviso && <Aviso tono="exito">{aviso}</Aviso>}
 
-      <div role="group" aria-label="Qué movimientos ver" className="-mx-1 flex w-fit max-w-full gap-1 overflow-x-auto rounded-full bg-hundido p-1">
+      <div role="group" aria-label="Qué movimientos ver" className="-mx-1 flex w-fit max-w-full gap-1 overflow-x-auto sin-barra rounded-full bg-hundido p-1">
         {PESTANAS.map((p) => (
           <button
             key={p.valor}

@@ -98,7 +98,7 @@ export const EducandosPagina = () => {
                 className="h-12 w-full rounded-full bg-superficie pr-4 pl-11 text-base ring-1 ring-linea placeholder:text-suave focus:outline-none focus:ring-2 focus:ring-bosque sm:max-w-sm"
               />
             </label>
-            <div role="group" aria-label="Filtrar por sección" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+            <div role="group" aria-label="Filtrar por sección" className="-m-1 flex gap-2 overflow-x-auto p-1 sin-barra">
               {[{ id: null, nombre: "Todas", color: null }, ...conNinos].map((s) => {
                 const activo = filtro === s.id;
                 return (
