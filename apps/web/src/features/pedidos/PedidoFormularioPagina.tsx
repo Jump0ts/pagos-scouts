@@ -312,7 +312,7 @@ export const PedidoFormularioPagina = () => {
                   </div>
                 </div>
                 <div className="flex flex-col items-center">
-                  <button type="button" disabled={i === 0} onClick={() => mover(i, -1)} aria-label="Subir" className="grid size-8 place-items-center rounded-full text-suave hover:bg-hundido disabled:opacity-30">
+                  <button type="button" disabled={i === 0} onClick={() => mover(i, -1)} aria-label="Subir" className="grid size-9 place-items-center rounded-full text-suave hover:bg-hundido disabled:opacity-30">
                     <ChevronUp className="size-4" aria-hidden />
                   </button>
                   <button
@@ -320,7 +320,7 @@ export const PedidoFormularioPagina = () => {
                     disabled={i === articulos.length - 1}
                     onClick={() => mover(i, 1)}
                     aria-label="Bajar"
-                    className="grid size-8 place-items-center rounded-full text-suave hover:bg-hundido disabled:opacity-30"
+                    className="grid size-9 place-items-center rounded-full text-suave hover:bg-hundido disabled:opacity-30"
                   >
                     <ChevronDown className="size-4" aria-hidden />
                   </button>
@@ -328,7 +328,7 @@ export const PedidoFormularioPagina = () => {
                     type="button"
                     onClick={() => setArticulos((as) => as.filter((x) => x.clave !== a.clave))}
                     aria-label={`Quitar ${a.nombre || "artículo"}`}
-                    className="grid size-8 place-items-center rounded-full text-suave hover:bg-rojo-claro hover:text-rojo"
+                    className="grid size-9 place-items-center rounded-full text-suave hover:bg-rojo-claro hover:text-rojo"
                   >
                     <Trash2 className="size-4" aria-hidden />
                   </button>

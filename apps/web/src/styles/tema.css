@@ -27,7 +27,18 @@
   --color-unidad: oklch(0.5 0.15 15);
   --color-clan: oklch(0.58 0.2 28);
   --color-scouters: oklch(0.5 0.15 300);
+
+  /* Curvas de movimiento: salida fuerte para lo que entra, y la de las hojas de iOS para lo que sube desde abajo. */
+  --ease-salida: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-hoja: cubic-bezier(0.32, 0.72, 0, 1);
 }
+
+/* Entradas y salidas de diálogos y hojas (Radix las espera para desmontar). Nada sale de la nada: escala 0,97, no 0. */
+@keyframes fundido-entra { from { opacity: 0; } }
+@keyframes fundido-sale { to { opacity: 0; } }
+@keyframes hoja-entra { from { transform: translateY(100%); } }
+@keyframes hoja-sale { to { transform: translateY(100%); } }
+@keyframes dialogo-entra { from { opacity: 0; scale: 0.97; } }
 
 @media (prefers-color-scheme: dark) {
   :root {
@@ -56,10 +67,33 @@
 }
 
 @layer base {
+  /* Que en el móvil se sienta app: sin destello al tocar, sin letra inflada en horizontal y sin que tirar de la
+     página dispare el recargar del navegador. */
+  html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior: none;
+  }
   body { @apply bg-fondo text-tinta font-sans antialiased; }
   :focus-visible { @apply outline-2 outline-offset-2 outline-bosque; }
 
+  /* Los controles responden al instante (sin esperar un posible doble toque) y una pulsación larga no selecciona su
+     texto. El contenido sigue siendo seleccionable. */
+  button, a, summary, label, [role="button"], [role="tab"], [role="radio"] { touch-action: manipulation; }
+  button, summary, [role="button"], [role="tab"], [role="radio"] { -webkit-user-select: none; user-select: none; }
+
+  /* Lo que dibuja el navegador, con los colores de la app. */
+  ::selection { background-color: var(--color-bosque-claro); color: var(--color-tinta); }
+  input, textarea { caret-color: var(--color-bosque); }
+
+  /* Al pulsar, el control se hunde un pelín: la app confirma que te ha oído. */
+  @media (prefers-reduced-motion: no-preference) {
+    button:not(:disabled):active, [role="button"]:active, a.rounded-full:active { scale: 0.97; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    /* Con menos movimiento, los diálogos solo aparecen con un fundido, sin desplazarse. */
+    [role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"] { animation: fundido-entra 150ms ease-out !important; }
   }
 }

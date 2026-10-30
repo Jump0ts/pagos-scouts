@@ -35,7 +35,7 @@ export const UnidadEditor = ({ articulo, linea, numero, error, onCambiar, onQuit
             type="button"
             onClick={onQuitar}
             aria-label={`Quitar ${articulo.nombre} ${numero}`}
-            className="grid size-8 place-items-center rounded-full text-suave hover:bg-superficie hover:text-rojo"
+            className="grid size-9 place-items-center rounded-full text-suave hover:bg-superficie hover:text-rojo"
           >
             <X className="size-4" aria-hidden />
           </button>

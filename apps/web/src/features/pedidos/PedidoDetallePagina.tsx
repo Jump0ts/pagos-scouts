@@ -63,9 +63,9 @@ const FilaPersona = ({ persona: p, editable, seccion, onQuitar, onAnadir }: {
                 type="button"
                 onClick={() => onQuitar(l.id, describirLinea(l.articulo, l.elecciones))}
                 aria-label={`Quitar ${describirLinea(l.articulo, l.elecciones)} de ${p.educando.nombre}`}
-                className="grid size-7 place-items-center rounded-full hover:bg-rojo-claro hover:text-rojo"
+                className="grid size-9 place-items-center rounded-full hover:bg-rojo-claro hover:text-rojo"
               >
-                <X className="size-3.5" aria-hidden />
+                <X className="size-4" aria-hidden />
               </button>
             )}
           </span>

@@ -27,6 +27,9 @@ still change.
   reloading on its own. Install steps for each system appear on the home screen on phones (can be dismissed) and always
   in Settings.
 - Automatic accessibility checks (axe) on the main screens in the tests.
+- Native feel on phones (D-76): no tap flash, no double-tap delay, no text selection on long-pressed controls, no
+  pull-to-refresh, bigger remove buttons, buttons that press in slightly, dialogs that slide up on phones and fade in
+  on desktop (fade only with reduced motion), and text selection and caret in the theme's green.
 
 ### Changed
 - Light theme: red, blue and light green tuned so every text reaches a 4.5:1 contrast; scrolling tab rows on phones no
