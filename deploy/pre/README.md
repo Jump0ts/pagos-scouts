@@ -1,5 +1,9 @@
 # Pre en el servidor doméstico
 
+> **Pospuesto (D-77):** hasta que haya más grupos, las pruebas que necesitan HTTPS (como instalar la PWA en el móvil)
+> se hacen con un túnel puntual desde el PC; ver «Probar en el móvil con HTTPS» al final. Cuando se monte este `pre`,
+> la idea es publicarlo con Cloudflare Tunnel en vez de abrir puertos del router.
+
 Entorno de pruebas en `https://pre-scouts.josanfersal.dev`, en el mismo servidor de casa que el pre de My Money
 (Docker, nginx, Certbot y `ddclient` ya instalados). **Solo datos inventados**: nunca se cargan aquí Excels del
 banco ni listados reales de educandos.
@@ -101,3 +105,18 @@ docker compose -f deploy/pre/docker-compose.yml --env-file deploy/pre/.env.pre l
 - La web carga pero "Base de datos" sale en rojo: revisa `POSTGRES_*` en `.env.pre`.
 - Para empezar de cero (borra los datos de pre):
   `docker compose -f deploy/pre/docker-compose.yml --env-file deploy/pre/.env.pre down -v`
+
+## Probar en el móvil con HTTPS (túnel puntual, D-77)
+
+Para probar lo que exige HTTPS (instalar la PWA, el service worker) sin montar nada. **Solo con datos inventados.**
+
+1. Una vez, instala `cloudflared` (en PowerShell): `winget install Cloudflare.cloudflared`
+2. Arranca la API (`npm run backend:dev`) y la web compilada: `npm run build --workspace=apps/web` y luego
+   `npx --prefix apps/web vite preview apps/web --port 4174`.
+3. Abre el túnel: `cloudflared tunnel --url http://localhost:4174`. Imprime una dirección `https://…trycloudflare.com`.
+4. Ábrela en el móvil, entra con un usuario de pruebas e instala la app.
+5. Al terminar, cierra el túnel con `Ctrl+C`: mientras está abierto, cualquiera con esa dirección llega a tu web de
+   desarrollo (con usuario y contraseña, y datos inventados).
+
+Si el móvil ya tenía instalada una versión de otro túnel, desinstálala: cada túnel tiene una dirección distinta.
+

@@ -17,7 +17,7 @@ export const TEXTO_SEGURO = /^[\p{L}\p{N}][\p{L}\p{N} .,'’()/+-]*$/u;
 export const NOMBRE_SEGURO = /^\p{L}[\p{L} .'’-]*$/u;
 
 const centimos = z
-  .number({ invalid_type_error: "Escribe un importe" })
+  .number({ error: "Escribe un importe" })
   .int("Importe no válido")
   .min(0, "El importe no puede ser negativo")
   .max(1_000_000, "Importe demasiado alto");
@@ -26,14 +26,14 @@ const id = z.string().min(1).max(40);
 
 const etiqueta = (min: number, max: number) =>
   z
-    .string({ required_error: "Escribe un nombre" })
+    .string({ error: "Escribe un nombre" })
     .trim()
     .min(min, "Escribe un nombre")
     .max(max, "Demasiado largo")
     .regex(TEXTO_SEGURO, "Usa solo letras, números, espacios y signos sencillos");
 
 const fecha = z
-  .string({ required_error: "Elige una fecha" })
+  .string({ error: "Elige una fecha" })
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha no válida")
   .refine((f) => !Number.isNaN(Date.parse(f)), "Fecha no válida");
 
@@ -43,7 +43,7 @@ const opcionSchema = z
   .object({
     id: id.optional(),
     nombre: etiqueta(1, 40),
-    tipo: z.enum(["LISTA", "TEXTO"], { errorMap: () => ({ message: "Elige el tipo de opción" }) }),
+    tipo: z.enum(["LISTA", "TEXTO"], { error: "Elige el tipo de opción" }),
     obligatoria: z.boolean().default(true),
     maxLongitud: z.number().int().min(1).max(MAX_LONGITUD_TEXTO).nullable().default(null),
     suplementoCentimos: centimos.default(0),
@@ -82,7 +82,7 @@ const FIN_ANTES_DE_INICIO = { path: ["fechaFin"], message: "La fecha de fin no p
 
 export const crearPedidoSchema = z
   .object({
-    nombre: z.string({ required_error: "Escribe un nombre" }).trim().min(2, "El nombre es demasiado corto").max(80, "El nombre es demasiado largo"),
+    nombre: z.string({ error: "Escribe un nombre" }).trim().min(2, "El nombre es demasiado corto").max(80, "El nombre es demasiado largo"),
     fechaInicio: fecha,
     fechaFin: fecha,
     instruccionesPago: instrucciones,
@@ -125,7 +125,7 @@ export const exportarPedidoSchema = z.object({ vista: z.enum(["personas", "prove
 
 const persona = (max: number) =>
   z
-    .string({ required_error: "Escríbelo" })
+    .string({ error: "Escríbelo" })
     .trim()
     .min(1, "Escríbelo")
     .max(max, "Demasiado largo")

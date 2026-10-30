@@ -47,6 +47,9 @@ export default defineConfig({
   // changeOrigin: false conserva el Host de la web, como hacen los nginx en el servidor; si no, la proteccion
   // CSRF de la API (Origin == Host) rechazaria todo lo que cambia datos.
   server: { proxy: { "/api": { target: "http://localhost:4000", changeOrigin: false } } },
+  // D-77: para probar la PWA instalada en un movil hace falta HTTPS; un tunel puntual de Cloudflare
+  // (*.trycloudflare.com) apunta a la web compilada de "vite preview". Solo afecta a la vista previa local.
+  preview: { allowedHosts: [".trycloudflare.com"] },
   test: {
     environment: "jsdom",
     globals: true,

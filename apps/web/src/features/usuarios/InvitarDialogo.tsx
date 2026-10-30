@@ -15,7 +15,7 @@ import { RolYSecciones } from "./RolYSecciones";
 const esquema = z
   .object({
     email: z.string().trim().min(1, "Escribe su email").email("No es un email válido"),
-    rol: z.enum(["ADMIN", "TESORERIA", "SCOUTER"], { errorMap: () => ({ message: "Elige un rol" }) }),
+    rol: z.enum(["ADMIN", "TESORERIA", "SCOUTER"], { error: "Elige un rol" }),
     seccionIds: z.array(z.string()),
   })
   .refine((d) => d.rol !== "SCOUTER" || d.seccionIds.length > 0, {
