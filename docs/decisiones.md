@@ -172,6 +172,7 @@ No se borra la antigua.
 | D-81 | **El curso nuevo se activa al confirmar** | Un solo paso: se revisa, se confirma y el curso nuevo queda activo. Nada se guarda antes de confirmar. El curso anterior sigue consultable (D-2). |
 | D-82 | **Las deudas de cursos anteriores también cuadran** | Modifica D-43. Un pago del banco se intenta cuadrar con todo lo pendiente o a medias de la familia, sea del curso que sea (por ejemplo, el campamento de verano pagado en septiembre). Si hay más de una combinación posible, va a Dudas (D-5). |
 | D-83 | **El paso de curso es la parte 9** | Llega antes de septiembre de 2027, como pedía D-31. |
+| D-84 | **Solo Admin hace el paso de curso** | En los grupos el paso de sección lo lleva Secretaría en el CRM de ámbito estatal; aquí no hay ese cargo, así que el asistente es solo para Admin. Tesorería y Scouters ven el curso nuevo cuando ya está activo. |
 
 Los importes se guardan en céntimos (enteros), para no tener errores de redondeo.
 
