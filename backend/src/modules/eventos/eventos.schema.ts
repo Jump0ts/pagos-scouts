@@ -1,13 +1,13 @@
 import { z } from "zod";
 
 const centimos = z
-  .number({ invalid_type_error: "Escribe un importe" })
+  .number({ error: "Escribe un importe" })
   .int("Importe no válido")
   .min(0, "El importe no puede ser negativo")
   .max(10_000_000, "Importe demasiado alto");
 
 const fecha = z
-  .string({ required_error: "Elige una fecha" })
+  .string({ error: "Elige una fecha" })
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha no válida")
   .refine((f) => !Number.isNaN(Date.parse(f)), "Fecha no válida");
 
@@ -17,7 +17,7 @@ const precios = z
   .refine((p) => new Set(p.map((x) => x.seccionId)).size === p.length, "Una sección aparece dos veces");
 
 const nombre = z
-  .string({ required_error: "Escribe un nombre" })
+  .string({ error: "Escribe un nombre" })
   .trim()
   .min(2, "El nombre es demasiado corto")
   .max(80, "El nombre es demasiado largo");
@@ -28,7 +28,7 @@ const FALTA_SEGUNDO = { path: ["precioSegundoCentimos"], message: "Indica el pre
 export const crearEventoSchema = z
   .object({
     nombre,
-    tipo: z.enum(["TODA_SECCION", "CON_APUNTADOS"], { errorMap: () => ({ message: "Elige el tipo de evento" }) }),
+    tipo: z.enum(["TODA_SECCION", "CON_APUNTADOS"], { error: "Elige el tipo de evento" }),
     fechaInicio: fecha,
     fechaFin: fecha,
     precios,

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { responsablesSchema } from "../familias/familias.schema.js";
 
-const nombre = z.string({ required_error: "Escribe el nombre" }).trim().min(1, "Escribe el nombre").max(60, "El nombre es demasiado largo");
+const nombre = z.string({ error: "Escribe el nombre" }).trim().min(1, "Escribe el nombre").max(60, "El nombre es demasiado largo");
 const apellidos = z.string().trim().max(80, "Los apellidos son demasiado largos").default("");
 const fechaNacimiento = z
   .string()
@@ -20,7 +20,7 @@ export const crearEducandoSchema = z.object({
   nombre,
   apellidos,
   fechaNacimiento,
-  seccionId: z.string({ required_error: "Elige una sección" }).min(1, "Elige una sección"),
+  seccionId: z.string({ error: "Elige una sección" }).min(1, "Elige una sección"),
   familia,
 });
 

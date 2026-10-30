@@ -158,6 +158,12 @@ No se borra la antigua.
 |---|---|---|
 | D-77 | **Probar en el móvil con un túnel puntual; `pre` no va en el droplet de producción** | Probar la PWA instalada exige HTTPS. Se descarta montar `pre` en el droplet de producción: tiene datos reales de menores, a `pre` llega código sin release y 1 GB de memoria no da para dos copias. Para pruebas concretas se abre un túnel puntual de Cloudflare (`cloudflared tunnel --url`) a la web compilada del PC, con datos inventados, y se cierra al terminar. Montar `pre` en el servidor de casa (D-13), con Cloudflare Tunnel en vez de abrir puertos, queda para cuando haya más grupos además del primero. |
 
+## Bloque 15 — Revisión de `npm audit` (2026-10-30)
+
+| # | Decisión | Detalle |
+|---|---|---|
+| D-78 | **Dependencias: se sube Zod y Vitest; Prisma y deepmerge se aceptan documentados** | **Zod 3 → 4** en la API y la web: Zod 3 podía agotar la memoria al validar listas enormes con tope. Ya lo frenaban los límites de tamaño (100 KB en la API, 32 KB en el formulario público), pero queda resuelto del todo. Los mensajes propios se mantienen; ahora también salen cuando llega un tipo equivocado, no solo cuando falta el campo. **Vitest 3 → 4.1.12** (solo desarrollo y CI): quita `tinypool` (crítica) y arregla `@vitest/mocker`. **Se acepta `deepmerge-ts`** (alta, dentro de Prisma): solo lo usa la herramienta de Prisma al leer su propia configuración y nadie de fuera puede llegar ahí; se resuelve al subir a Prisma 7, que es una migración grande y tendrá su propia rama. **Se acepta `deepmerge`** (baja, dentro de `vite-plugin-pwa`): solo se usa al compilar la web con nuestra propia configuración y no hay versión arreglada. |
+
 Los importes se guardan en céntimos (enteros), para no tener errores de redondeo.
 
 **Nota sobre ramas:** la parte 1 sale de `pre` y no de `develop`, porque necesita el esqueleto de la parte 0, que aún

@@ -6,6 +6,13 @@ still change.
 
 ## [Unreleased]
 
+### Security
+- Zod upgraded from 3 to 4 in the API and the web, which fixes a possible memory exhaustion when validating oversized
+  lists (D-78). Custom messages are kept and now also show when a field arrives with the wrong type.
+- Vitest upgraded to 4.1.12 (development and CI only), which drops the vulnerable `tinypool` and fixes `@vitest/mocker`.
+- Accepted and documented: `deepmerge-ts` inside the Prisma command-line tool (fixed by Prisma 7, a separate migration)
+  and `deepmerge` inside the PWA build plugin (build time only, no fixed version).
+
 ## [0.2.0] - 2026-10-30
 
 Orders with their own form for families, an installable app and an accessibility and finish pass.

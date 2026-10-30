@@ -28,7 +28,7 @@ const esquema = z
     tipo: z.enum(["TODA_SECCION", "CON_APUNTADOS"]),
     fechaInicio: z.string().min(1, "Elige una fecha"),
     fechaFin: z.string().min(1, "Elige una fecha"),
-    secciones: z.record(z.object({ activa: z.boolean(), importe: z.string() })),
+    secciones: z.record(z.string(), z.object({ activa: z.boolean(), importe: z.string() })),
     descuentoHermanos: z.boolean(),
     segundo: z.string(),
     tercero: z.string(),
