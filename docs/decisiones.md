@@ -142,6 +142,16 @@ No se borra la antigua.
 | D-70 | **Conservar lo mínimo y Excel seguro** | Al aceptar un envío se guardan solo sus líneas y el envío se borra; los rechazados se borran en el momento; los pendientes que nadie revise se borran solos 30 días después de cerrar o terminar el pedido. Al exportar a Excel, cualquier texto que empiece por `=`, `+`, `-`, `@`, tabulador o retorno se neutraliza para que un texto malicioso no se ejecute como fórmula al abrir el fichero. |
 | D-71 | **Los pedidos son la parte 7** | La PWA, el pulido visual y la accesibilidad pasan a la parte 8. |
 
+## Bloque 13 — Parte 8: PWA, pulido y accesibilidad (2026-10-29)
+
+| # | Decisión | Detalle |
+|---|---|---|
+| D-72 | **Sin conexión, solo la app; nunca los datos** | Concreta D-6. El service worker guarda la web (HTML, JS, CSS, fuentes e iconos) para que abra al instante; las respuestas de `/api` **nunca** se guardan: en un móvil compartido o perdido no queda ningún dato de los niños. Sin conexión, la app lo dice con un aviso claro. |
+| D-73 | **Versiones nuevas con aviso** | Cuando hay una versión nueva, sale un aviso «Hay una versión nueva» con un botón Actualizar. Nunca se recarga sola en mitad de algo. |
+| D-74 | **Guía de instalación en Inicio y en Ajustes** | En móviles y si aún no está instalada, una tarjeta en Inicio que se puede cerrar, con los pasos de su sistema (Android: botón Instalar; iPhone: Compartir → Añadir a pantalla de inicio). Siempre disponible en Ajustes. Icono propio de la app en todos los tamaños de Android e iPhone. |
+| D-75 | **Accesibilidad comprobada en los tests y a mano** | axe revisa en los tests de la web las pantallas principales y la CI falla si aparece un problema. Además, revisión a mano de cada pantalla (teclado, foco visible, lector de pantalla, contraste en claro y oscuro, tamaño de los botones en el móvil y movimiento reducido) y pulido de estados vacíos, de carga y de error. |
+| D-76 | **Acabado de app en el móvil** | Completa D-75 tras revisarla con impeccable y las guías de móvil nativo y de detalles de interfaz. Sin destello al tocar, sin retraso de doble toque, sin selección de texto al mantener pulsado un control y sin «tirar para recargar». Los botones de quitar miden al menos 36 px. Los botones se hunden un poco al pulsarlos (escala 0,97). Los diálogos suben desde abajo en el móvil y aparecen con un fundido en el ordenador (unos 0,2 s); con «reducir movimiento», solo fundido y sin hundirse. La selección de texto y el cursor usan el verde del tema. Sin cambios de colores, tipografía ni estética (D-7). |
+
 Los importes se guardan en céntimos (enteros), para no tener errores de redondeo.
 
 **Nota sobre ramas:** la parte 1 sale de `pre` y no de `develop`, porque necesita el esqueleto de la parte 0, que aún

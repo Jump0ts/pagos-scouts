@@ -15,9 +15,9 @@ type Props = {
 export const Dialogo = ({ abierto, onCambiar, titulo, descripcion, children }: Props) => (
   <RadixDialog.Root open={abierto} onOpenChange={onCambiar}>
     <RadixDialog.Portal>
-      <RadixDialog.Overlay className="fixed inset-0 z-40 bg-tinta/40 backdrop-blur-[2px]" />
+      <RadixDialog.Overlay className="fixed inset-0 z-40 bg-tinta/40 backdrop-blur-[2px] data-[state=open]:animate-[fundido-entra_200ms_var(--ease-salida)] data-[state=closed]:animate-[fundido-sale_150ms_var(--ease-salida)]" />
       <RadixDialog.Content
-        className="fixed inset-x-0 bottom-0 z-50 max-h-[90dvh] overflow-y-auto rounded-t-3xl bg-superficie p-5 shadow-2xl ring-1 ring-linea sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:w-full sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-3xl sm:p-6"
+        className="fixed inset-x-0 bottom-0 z-50 max-h-[90dvh] overflow-y-auto rounded-t-3xl bg-superficie p-5 shadow-2xl ring-1 ring-linea sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:w-full sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-3xl sm:p-6 data-[state=open]:animate-[hoja-entra_280ms_var(--ease-hoja)] data-[state=closed]:animate-[hoja-sale_200ms_var(--ease-hoja)] sm:data-[state=open]:animate-[dialogo-entra_200ms_var(--ease-salida)] sm:data-[state=closed]:animate-[fundido-sale_150ms_var(--ease-salida)]"
         style={{ paddingBottom: "max(20px, env(safe-area-inset-bottom))" }}
       >
         <div className="mb-4 flex items-start justify-between gap-4">

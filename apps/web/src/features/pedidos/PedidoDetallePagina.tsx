@@ -63,9 +63,9 @@ const FilaPersona = ({ persona: p, editable, seccion, onQuitar, onAnadir }: {
                 type="button"
                 onClick={() => onQuitar(l.id, describirLinea(l.articulo, l.elecciones))}
                 aria-label={`Quitar ${describirLinea(l.articulo, l.elecciones)} de ${p.educando.nombre}`}
-                className="grid size-7 place-items-center rounded-full hover:bg-rojo-claro hover:text-rojo"
+                className="grid size-9 place-items-center rounded-full hover:bg-rojo-claro hover:text-rojo"
               >
-                <X className="size-3.5" aria-hidden />
+                <X className="size-4" aria-hidden />
               </button>
             )}
           </span>
@@ -242,7 +242,7 @@ export const PedidoDetallePagina = () => {
         {resumen.debidoCentimos > 0 && <BarraProgreso valor={resumen.pagadoCentimos} total={resumen.debidoCentimos} etiqueta="Cobrado del pedido" />}
       </section>
 
-      <div role="tablist" aria-label="Vistas del pedido" onKeyDown={teclas} className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+      <div role="tablist" aria-label="Vistas del pedido" onKeyDown={teclas} className="-m-1 flex gap-2 overflow-x-auto p-1 sin-barra">
         {pestanas.map((p) => (
           <button
             key={p.valor}

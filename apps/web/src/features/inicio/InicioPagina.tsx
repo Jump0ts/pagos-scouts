@@ -7,6 +7,7 @@ import { enSeguimiento } from "@/features/eventos/eventos.utils";
 import { TarjetaEvento } from "@/features/eventos/TarjetaEvento";
 import { EstadoSistema } from "@/features/health/EstadoSistema";
 import { useMovimientos } from "@/features/movimientos/movimientos.api";
+import { TarjetaInstalar } from "@/features/pwa/TarjetaInstalar";
 
 // Los pagos que esperan una decisión (D-5). Solo para quien ve los movimientos del banco (D-16).
 const TarjetaDudas = () => {
@@ -75,6 +76,8 @@ export const InicioPagina = () => {
           </p>
         )}
       </div>
+
+      <TarjetaInstalar />
 
       {gestiona && <TarjetaDudas />}
 
