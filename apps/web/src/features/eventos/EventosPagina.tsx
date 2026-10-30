@@ -1,4 +1,4 @@
-import { CalendarDays, Plus } from "lucide-react";
+import { CalendarDays, Plus, Shirt } from "lucide-react";
 import { Link } from "react-router";
 import { Aviso } from "@/components/Aviso";
 import { Cargando } from "@/components/Cargando";
@@ -28,9 +28,17 @@ export const EventosPagina = () => {
           <p className="text-suave">{data.curso ? `Curso ${data.curso.nombre}` : "Todavía no hay ningún curso"}</p>
         </div>
         {gestiona && data.curso && (
-          <Link to="/eventos/nuevo" className="inline-flex h-9 items-center gap-2 rounded-full bg-bosque px-3.5 text-sm font-semibold text-fondo">
-            <Plus className="size-4" aria-hidden /> Nuevo evento
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              to="/eventos/pedidos/nuevo"
+              className="inline-flex h-9 items-center gap-2 rounded-full bg-superficie px-3.5 text-sm font-semibold ring-1 ring-linea hover:bg-hundido"
+            >
+              <Shirt className="size-4" aria-hidden /> Nuevo pedido
+            </Link>
+            <Link to="/eventos/nuevo" className="inline-flex h-9 items-center gap-2 rounded-full bg-bosque px-3.5 text-sm font-semibold text-fondo">
+              <Plus className="size-4" aria-hidden /> Nuevo evento
+            </Link>
+          </div>
         )}
       </div>
 

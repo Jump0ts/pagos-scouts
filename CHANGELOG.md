@@ -6,6 +6,47 @@ still change.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-30
+
+Orders with their own form for families, an installable app and an accessibility and finish pass.
+
+### Added
+- **Part 7 — orders (D-66 to D-71).** A new kind of event for on-demand orders (sweatshirts, T-shirts, scarves…): a
+  catalogue of articles with a price, a maximum number of units per person and options to choose from (lists such as
+  size, with an optional surcharge per value, and short texts such as a name to print). Each person's charge is the
+  sum of what they ordered, so bank classification, Doubts and manual payments work as usual.
+- A public form for families, opened with a link per order whose code goes after the `#` (it never reaches the
+  server logs). It never shows the group's roster; families type the name and pick the section. Submissions wait
+  for Treasury to review them with a traffic light (recognised, doubtful, not in the roster) and a "possible change"
+  warning for repeated submissions; only then do they count. Orders can also be added by hand, closed when sent to the
+  supplier and reopened.
+- Exports per person and for the supplier. The supplier's one is a single sheet with article, options, units and the
+  name to print: units without a name are added up in one row and each name gets its own row (the same name with the
+  same options is added up), without saying whose they are.
+- Protection of the public form without third parties: rate limits in nginx and in the API, a signed ticket with a
+  minimum filling time, a honeypot field, a size limit and a cap of pending submissions per order. Unreviewed
+  submissions are deleted 30 days after the order closes or ends.
+- **Part 8 — installable app (D-72 to D-75).** The web can be installed on Android and iPhone with its own icon. It
+  opens instantly because the app itself is stored on the device, but data never is: every screen asks the server.
+  Without connection a banner says so. A new version shows "There is a new version" with an Update button instead of
+  reloading on its own. Install steps for each system appear on the home screen on phones (can be dismissed) and always
+  in Settings.
+- Automatic accessibility checks (axe) on the main screens in the tests.
+- Native feel on phones (D-76): no tap flash, no double-tap delay, no text selection on long-pressed controls, no
+  pull-to-refresh, bigger remove buttons, buttons that press in slightly, dialogs that slide up on phones and fade in
+  on desktop (fade only with reduced motion), and text selection and caret in the theme's green.
+- With reduced motion, loading indicators keep moving slowly instead of freezing, so the app never looks stuck.
+
+### Changed
+- Light theme: red, blue and light green tuned so every text reaches a 4.5:1 contrast; scrolling tab rows on phones no
+  longer show a scrollbar; the two main navigations have distinct names for screen readers.
+- Any text exported to Excel that starts with `=`, `+`, `-` or `@` is neutralised so it can never run as a formula
+  (D-70).
+- Production server: when a security update needs it (mainly the kernel), the server reboots on its own at 04:30
+  UTC, after the nightly backup (D-64).
+- Production guide: the daily backup download runs when the PC is turned on if it was off at 09:00, so the PC no
+  longer needs to stay on (D-65).
+
 ## [0.1.1] - 2026-10-28
 
 ### Fixed

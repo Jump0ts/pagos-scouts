@@ -28,8 +28,9 @@ export const sincronizarCargos = async (
   const curso = await cursoActivo(grupoId, tx);
   if (!curso) return resumen;
 
+  // Los pedidos no siguen al listado (D-66): su cargo es la suma de sus lineas y se mantiene aunque el niño se vaya.
   const eventos = await tx.evento.findMany({
-    where: { grupoId, cursoId: curso.id, ...(soloEventoId && { id: soloEventoId }) },
+    where: { grupoId, cursoId: curso.id, tipo: { not: "PEDIDO" }, ...(soloEventoId && { id: soloEventoId }) },
     include: { precios: true, cargos: true },
   });
   if (!eventos.length) return resumen;

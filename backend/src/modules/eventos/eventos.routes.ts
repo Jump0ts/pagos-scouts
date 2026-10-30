@@ -27,6 +27,11 @@ const eventoDelGrupo = async (id: string, grupoId: string) => {
   return evento;
 };
 
+// Precios, apuntados y ajustes no aplican a un pedido: sus cargos salen de las lineas (D-66).
+const noEsPedido = (evento: Evento) => {
+  if (evento.tipo === "PEDIDO") throw badRequest("En un pedido esto se cambia desde sus líneas");
+};
+
 // Lo cobrado de un cargo nunca cuenta mas que lo que debe (un sobrante es saldo de la familia, D-5c).
 const resumenDe = (cargos: Cargo[], pagados: Map<string, number>) => {
   const activos = cargos.filter((c) => c.estado === "ACTIVO");
@@ -49,6 +54,7 @@ const vistaEvento = (evento: Evento & { precios: PrecioSeccion[] }) => ({
   tipo: evento.tipo,
   fechaInicio: aTexto(evento.fechaInicio),
   fechaFin: aTexto(evento.fechaFin),
+  cerrado: evento.cerradoEn !== null,
   descuentoHermanos: evento.descuentoHermanos,
   precioSegundoCentimos: evento.precioSegundoCentimos,
   precioTerceroCentimos: evento.precioTerceroCentimos,
@@ -79,7 +85,12 @@ eventosRouter.get(
     }
     const visibles = seccionesVisibles(req);
     const eventos = await prisma.evento.findMany({
-      where: { grupoId, cursoId: curso.id, ...(visibles && { precios: { some: { seccionId: { in: [...visibles] } } } }) },
+      // Los pedidos son de todo el grupo: un scouter los ve, con lo de sus secciones (D-66).
+      where: {
+        grupoId,
+        cursoId: curso.id,
+        ...(visibles && { OR: [{ tipo: "PEDIDO" }, { precios: { some: { seccionId: { in: [...visibles] } } } }] }),
+      },
       orderBy: [{ fechaFin: "asc" }, { nombre: "asc" }],
       include: { precios: true, cargos: true },
     });
@@ -133,7 +144,9 @@ eventosRouter.post(
 const detalleDe = async (req: Request) => {
   const evento = await eventoDelGrupo(req.params.id, req.grupo!.id);
   const visibles = seccionesVisibles(req);
-  if (visibles && !evento.precios.some((p) => visibles.has(p.seccionId))) throw notFound("Evento no encontrado");
+  if (visibles && evento.tipo !== "PEDIDO" && !evento.precios.some((p) => visibles.has(p.seccionId))) {
+    throw notFound("Evento no encontrado");
+  }
 
   const cargos = await prisma.cargo.findMany({
     where: { eventoId: evento.id, ...(visibles && { seccionId: { in: [...visibles] } }) },
@@ -213,6 +226,7 @@ eventosRouter.patch(
     const datos = validar(editarEventoSchema, req.body);
     const grupoId = req.grupo!.id;
     const evento = await eventoDelGrupo(req.params.id, grupoId);
+    noEsPedido(evento);
     const inicio = datos.fechaInicio ?? aTexto(evento.fechaInicio);
     const fin = datos.fechaFin ?? aTexto(evento.fechaFin);
     if (fin < inicio) throw badRequest("Revisa los datos enviados", { fechaFin: "La fecha de fin no puede ser anterior al inicio" });
@@ -264,6 +278,7 @@ eventosRouter.post(
     const { educandoIds } = validar(anadirNinosSchema, req.body);
     const grupoId = req.grupo!.id;
     const evento = await eventoDelGrupo(req.params.id, grupoId);
+    noEsPedido(evento);
     const validas = await comprobarApuntables(evento.cursoId, grupoId, educandoIds, new Set(evento.precios.map((p) => p.seccionId)));
     await prisma.$transaction(async (tx) => {
       for (const m of validas) {
@@ -319,6 +334,7 @@ eventosRouter.patch(
   asyncHandler(async (req, res) => {
     const { importeAjustadoCentimos, motivo } = validar(ajustarCargoSchema, req.body);
     const evento = await eventoDelGrupo(req.params.id, req.grupo!.id);
+    noEsPedido(evento);
     const cargo = await cargoDelEvento(req.params.cargoId, evento.id);
     const pagado = (await pagadoPorCargo([cargo.id])).get(cargo.id) ?? 0;
     if (importeAjustadoCentimos !== null && importeAjustadoCentimos < pagado) {
@@ -342,6 +358,7 @@ eventosRouter.delete(
   asyncHandler(async (req, res) => {
     const grupoId = req.grupo!.id;
     const evento = await eventoDelGrupo(req.params.id, grupoId);
+    noEsPedido(evento);
     const cargo = await cargoDelEvento(req.params.cargoId, evento.id);
     await sinPagos([cargo.id], "Este niño ya ha pagado algo de este evento. Deshaz ese pago en Movimientos antes de quitarlo.");
     await prisma.$transaction(async (tx) => {

@@ -1,6 +1,7 @@
 import type { MedioPago } from "@/features/movimientos/movimientos.types";
 
-export type TipoEvento = "TODA_SECCION" | "CON_APUNTADOS";
+// D-66: los pedidos se crean y se ven en su propia pantalla (features/pedidos).
+export type TipoEvento = "TODA_SECCION" | "CON_APUNTADOS" | "PEDIDO";
 export type EstadoCargo = "PENDIENTE" | "PARCIAL" | "PAGADO" | "EXENTO";
 
 export type Evento = {
@@ -9,6 +10,7 @@ export type Evento = {
   tipo: TipoEvento;
   fechaInicio: string;
   fechaFin: string;
+  cerrado: boolean;
   descuentoHermanos: boolean;
   precioSegundoCentimos: number | null;
   precioTerceroCentimos: number | null;
