@@ -6,6 +6,10 @@ still change.
 
 ## [Unreleased]
 
+### Changed
+- In the order form, the buttons to add an article are now at the end of the list, and the new article gets the focus,
+  so on a phone there is no need to scroll up to add one and back down to fill it in.
+
 ### Security
 - Zod upgraded from 3 to 4 in the API and the web, which fixes a possible memory exhaustion when validating oversized
   lists (D-78). Custom messages are kept and now also show when a field arrives with the wrong type.

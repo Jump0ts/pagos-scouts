@@ -167,6 +167,11 @@ export const PedidoFormularioPagina = () => {
   if (edicion && cargando) return <Cargando />;
   if (edicion && !detalle) return <Aviso tono="error">No se ha encontrado el pedido.</Aviso>;
 
+  // El articulo nuevo va al final de la lista; se lleva el foco a su nombre para rellenarlo sin buscarlo.
+  const anadirArticulo = (nuevo: ArticuloForm) => {
+    setArticulos((as) => [...as, nuevo]);
+    requestAnimationFrame(() => document.getElementById(`${nuevo.clave}-nombre`)?.focus());
+  };
   const cambiarArticulo = (c: string, cambio: Partial<ArticuloForm>) => setArticulos((as) => as.map((a) => (a.clave === c ? { ...a, ...cambio } : a)));
   const cambiarOpcion = (a: ArticuloForm, c: string, cambio: Partial<OpcionForm>) =>
     cambiarArticulo(a.clave, { opciones: a.opciones.map((o) => (o.clave === c ? { ...o, ...cambio } : o)) });
@@ -260,19 +265,9 @@ export const PedidoFormularioPagina = () => {
         </section>
 
         <section className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h2 className="font-display text-xl font-bold">Artículos</h2>
-              <p className="text-sm text-suave">Cada artículo con su precio y lo que hay que elegir. Los suplementos se suman al precio.</p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Boton variante="secundario" tamano="pequeno" onClick={() => setArticulos((as) => [...as, ropaConTalla()])}>
-                <Shirt className="size-4" aria-hidden /> Ropa con talla
-              </Boton>
-              <Boton variante="secundario" tamano="pequeno" onClick={() => setArticulos((as) => [...as, articuloNuevo()])}>
-                <Plus className="size-4" aria-hidden /> Artículo
-              </Boton>
-            </div>
+          <div>
+            <h2 className="font-display text-xl font-bold">Artículos</h2>
+            <p className="text-sm text-suave">Cada artículo con su precio y lo que hay que elegir. Los suplementos se suman al precio.</p>
           </div>
           <ErrorCampo texto={errores.articulos} />
 
@@ -473,11 +468,20 @@ export const PedidoFormularioPagina = () => {
             </article>
           ))}
 
-          {articulos.length === 0 && (
-            <p className="rounded-3xl border border-dashed border-linea p-6 text-center text-suave">
-              Empieza con «Ropa con talla» para una camiseta o sudadera, o crea un artículo vacío.
-            </p>
-          )}
+          {/* Al final de la lista: el articulo nuevo aparece justo encima, donde se esta mirando. */}
+          <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-linea p-5 text-center">
+            {articulos.length === 0 && (
+              <p className="text-sm text-suave">Empieza con «Ropa con talla» para una camiseta o sudadera, o crea un artículo vacío.</p>
+            )}
+            <div className="flex flex-wrap justify-center gap-2">
+              <Boton variante="secundario" tamano="pequeno" onClick={() => anadirArticulo(ropaConTalla())}>
+                <Shirt className="size-4" aria-hidden /> Añadir ropa con talla
+              </Boton>
+              <Boton variante="secundario" tamano="pequeno" onClick={() => anadirArticulo(articuloNuevo())}>
+                <Plus className="size-4" aria-hidden /> Añadir artículo
+              </Boton>
+            </div>
+          </div>
         </section>
 
         {Object.keys(errores).length > 0 && <Aviso tono="error">Revisa los campos marcados.</Aviso>}
