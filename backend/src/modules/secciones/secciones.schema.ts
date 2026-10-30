@@ -2,12 +2,12 @@ import { z } from "zod";
 import { COLORES_SECCION } from "./secciones.constants.js";
 
 const nombreSeccion = z
-  .string({ required_error: "Escribe un nombre" })
+  .string({ error: "Escribe un nombre" })
   .trim()
   .min(2, "El nombre es demasiado corto")
   .max(40, "El nombre es demasiado largo");
 
-const colorSeccion = z.enum(COLORES_SECCION, { errorMap: () => ({ message: "Elige un color de la lista" }) });
+const colorSeccion = z.enum(COLORES_SECCION, { error: "Elige un color de la lista" });
 
 export const crearSeccionSchema = z.object({ nombre: nombreSeccion, color: colorSeccion });
 

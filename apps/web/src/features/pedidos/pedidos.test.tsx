@@ -187,3 +187,17 @@ describe("revisar un pedido (D-68)", () => {
     await waitFor(() => expect(aceptar).toHaveBeenCalledWith({ educandoId: "ed1", reemplazar: false }));
   });
 });
+
+describe("crear un pedido", () => {
+  it("los artículos se añaden al final de la lista y el foco va a su nombre", async () => {
+    simularApi({ "GET /auth/yo": { cuerpo: PERFIL_ADMIN }, "GET /secciones": { cuerpo: { secciones: SECCIONES } } });
+    renderizar("/eventos/pedidos/nuevo");
+
+    await userEvent.click(await screen.findByRole("button", { name: "Añadir ropa con talla" }));
+    await userEvent.click(screen.getByRole("button", { name: "Añadir artículo" }));
+
+    const articulos = screen.getAllByRole("article");
+    expect(articulos).toHaveLength(2);
+    await waitFor(() => expect(within(articulos[1]).getByLabelText("Artículo")).toHaveFocus());
+  });
+});

@@ -21,7 +21,7 @@ const esquema = z
     fechaNacimiento: z
       .string()
       .refine((f) => !f || new Date(f) <= new Date(), "La fecha no puede ser futura"),
-    seccionId: z.string({ required_error: "Elige una sección" }).min(1, "Elige una sección"),
+    seccionId: z.string({ error: "Elige una sección" }).min(1, "Elige una sección"),
     modoFamilia: z.enum(["nueva", "hermano", "fija"]),
     responsables: z.array(z.string()),
     hermanoFamiliaId: z.string(),

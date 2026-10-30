@@ -6,6 +6,21 @@ still change.
 
 ## [Unreleased]
 
+### Changed
+- In the order form, the buttons to add an article are now at the end of the list, and the new article gets the focus,
+  so on a phone there is no need to scroll up to add one and back down to fill it in.
+
+### Security
+- Zod upgraded from 3 to 4 in the API and the web, which fixes a possible memory exhaustion when validating oversized
+  lists (D-78). Custom messages are kept and now also show when a field arrives with the wrong type.
+- Vitest upgraded to 4.1.12 (development and CI only), which drops the vulnerable `tinypool` and fixes `@vitest/mocker`.
+- Accepted and documented: `deepmerge-ts` inside the Prisma command-line tool (fixed by Prisma 7, a separate migration)
+  and `deepmerge` inside the PWA build plugin (build time only, no fixed version).
+
+## [0.2.0] - 2026-10-30
+
+Orders with their own form for families, an installable app and an accessibility and finish pass.
+
 ### Added
 - **Part 7 — orders (D-66 to D-71).** A new kind of event for on-demand orders (sweatshirts, T-shirts, scarves…): a
   catalogue of articles with a price, a maximum number of units per person and options to choose from (lists such as

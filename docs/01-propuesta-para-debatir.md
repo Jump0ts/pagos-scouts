@@ -189,6 +189,13 @@ Cada parte va en su `feature/*`, la pruebas aislada en `pre` y, cuando un bloque
 
 **Release 0.1.0** = partes 0–6 (lo mínimo útil). Las partes 7 y 8 pueden ir en la 0.2.0.
 
+### Pendientes para próximas partes
+
+Ideas apuntadas al usar la app; cada una se debate (D-n) antes de hacerla.
+
+- **Reparto de los pedidos** (2026-10-30): marcar a quién se le ha entregado ya lo pedido y a quién no (por ejemplo,
+  en un pedido de camisetas), con botones para marcar y desmarcar todos.
+
 ## 9. Diagrama para el currículum
 
 Un diagrama de flujo y funcionamiento: **Excel del banco → clasificación → dudas → aprendizaje → estado por
