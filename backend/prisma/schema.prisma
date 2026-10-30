@@ -43,6 +43,8 @@ model Seccion {
   orden     Int
   // Clave de color del tema de la web (castores, manada, tropa, unidad, clan, scouters).
   color     String
+  // D-79: edad maxima (cumplida en el año en que empieza el curso). Sin ella, nadie sale de la seccion al pasar de curso.
+  edadMaxima Int?
   archivada Boolean  @default(false)
   creadoEn  DateTime @default(now())
 

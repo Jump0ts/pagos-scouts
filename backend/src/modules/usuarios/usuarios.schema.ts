@@ -3,7 +3,7 @@ import { z } from "zod";
 
 export const editarMiembroSchema = z
   .object({
-    rol: z.nativeEnum(Rol, { errorMap: () => ({ message: "Elige un rol" }) }),
+    rol: z.enum(Rol, { error: "Elige un rol" }),
     seccionIds: z.array(z.string().min(1)).default([]),
   })
   .refine((datos) => datos.rol !== "SCOUTER" || datos.seccionIds.length > 0, {

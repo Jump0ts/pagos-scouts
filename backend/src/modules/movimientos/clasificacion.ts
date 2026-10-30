@@ -12,7 +12,7 @@ export type Contexto = {
   // D-1: pagadores aprendidos (clave del nombre -> familia).
   pagadores: Map<string, string>;
   familias: FamiliaConocida[];
-  // Por familia, sus cargos con algo pendiente en el curso activo. Se actualiza al clasificar cada movimiento.
+  // Por familia, sus cargos con algo pendiente, de cualquier curso (D-82). Se actualiza al clasificar cada movimiento.
   pendientes: Map<string, CargoPendiente[]>;
   // Familias con pagos marcados en el listado (D-44).
   conMarcas: Set<string>;

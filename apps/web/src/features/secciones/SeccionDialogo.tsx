@@ -16,6 +16,12 @@ import type { ColorSeccion, Seccion } from "./secciones.types";
 const esquema = z.object({
   nombre: z.string().trim().min(2, "El nombre es demasiado corto").max(40, "El nombre es demasiado largo"),
   color: z.enum(["castores", "manada", "tropa", "unidad", "clan", "scouters"]),
+  // D-79: vacia en las secciones de las que no se sale por edad, como Scouters.
+  edadMaxima: z
+    .string()
+    .trim()
+    .regex(/^\d*$/, "Escribe la edad en años, sin decimales")
+    .refine((e) => e === "" || (Number(e) >= 3 && Number(e) <= 99), "Escribe una edad entre 3 y 99 años"),
 });
 type Datos = z.infer<typeof esquema>;
 
@@ -30,16 +36,17 @@ export const SeccionDialogo = ({ abierto, onCambiar, seccion }: Props) => {
   });
 
   useEffect(() => {
-    if (abierto) reset({ nombre: seccion?.nombre ?? "", color: seccion?.color ?? "tropa" });
+    if (abierto) reset({ nombre: seccion?.nombre ?? "", color: seccion?.color ?? "tropa", edadMaxima: seccion?.edadMaxima?.toString() ?? "" });
   }, [abierto, seccion, reset]);
 
-  const guardar = handleSubmit(async (datos) => {
+  const guardar = handleSubmit(async ({ edadMaxima, ...resto }) => {
+    const datos = { ...resto, edadMaxima: edadMaxima === "" ? null : Number(edadMaxima) };
     try {
       if (seccion) await editar.mutateAsync({ id: seccion.id, ...datos });
       else await crear.mutateAsync(datos);
       onCambiar(false);
     } catch (error) {
-      mostrarErroresDelServidor(error, setError, ["nombre", "color"]);
+      mostrarErroresDelServidor(error, setError, ["nombre", "color", "edadMaxima"]);
     }
   });
 
@@ -48,6 +55,15 @@ export const SeccionDialogo = ({ abierto, onCambiar, seccion }: Props) => {
       <form onSubmit={guardar} noValidate className="flex flex-col gap-5">
         {errors.root?.servidor && <Aviso tono="error">{errors.root.servidor.message}</Aviso>}
         <Campo etiqueta="Nombre" autoFocus error={errors.nombre?.message} {...register("nombre")} />
+        <Campo
+          etiqueta="Edad máxima (opcional)"
+          ayuda="Al pasar de curso, la app propone subir a quien cumpla más años que esta edad. Déjala vacía si de esta sección no se sale por edad, como Scouters."
+          inputMode="numeric"
+          autoComplete="off"
+          className="sm:max-w-48"
+          error={errors.edadMaxima?.message}
+          {...register("edadMaxima")}
+        />
         <fieldset>
           <legend className="mb-2 text-sm font-semibold">Color</legend>
           <Controller

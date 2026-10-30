@@ -5,7 +5,7 @@ import { SECCIONES_POR_DEFECTO } from "./secciones.constants.js";
 
 export const crearSeccionesPorDefecto = (tx: Prisma.TransactionClient, grupoId: string) =>
   tx.seccion.createMany({
-    data: SECCIONES_POR_DEFECTO.map((s, orden) => ({ grupoId, nombre: s.nombre, color: s.color, orden })),
+    data: SECCIONES_POR_DEFECTO.map((s, orden) => ({ grupoId, nombre: s.nombre, color: s.color, edadMaxima: s.edadMaxima, orden })),
   });
 
 // Las secciones que se asignan a un scouter tienen que ser del mismo grupo y no estar archivadas.

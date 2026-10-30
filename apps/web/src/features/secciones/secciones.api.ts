@@ -17,13 +17,13 @@ const useAlCambiar = () => {
 
 export const useCrearSeccion = () =>
   useMutation({
-    mutationFn: (datos: { nombre: string; color: ColorSeccion }) => api("/secciones", { metodo: "POST", cuerpo: datos }),
+    mutationFn: (datos: { nombre: string; color: ColorSeccion; edadMaxima: number | null }) => api("/secciones", { metodo: "POST", cuerpo: datos }),
     onSuccess: useAlCambiar(),
   });
 
 export const useEditarSeccion = () =>
   useMutation({
-    mutationFn: ({ id, ...datos }: { id: string; nombre?: string; color?: ColorSeccion; archivada?: boolean }) =>
+    mutationFn: ({ id, ...datos }: { id: string; nombre?: string; color?: ColorSeccion; edadMaxima?: number | null; archivada?: boolean }) =>
       api(`/secciones/${id}`, { metodo: "PATCH", cuerpo: datos }),
     onSuccess: useAlCambiar(),
   });

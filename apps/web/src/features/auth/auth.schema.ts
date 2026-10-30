@@ -13,20 +13,19 @@ export const loginSchema = z.object({
 });
 export type LoginDatos = z.infer<typeof loginSchema>;
 
-const conRepeticion = <T extends z.ZodRawShape>(forma: T) =>
-  z
-    .object({ ...forma, contrasena: contrasenaNueva, repetir: z.string() })
-    .refine((d) => d.contrasena === d.repetir, { path: ["repetir"], message: "Las contraseñas no coinciden" });
+const contrasenas = z.object({ contrasena: contrasenaNueva, repetir: z.string() });
+const coinciden = (d: z.infer<typeof contrasenas>) => d.contrasena === d.repetir;
+const NO_COINCIDEN = { path: ["repetir"], message: "Las contraseñas no coinciden" };
 
-export const cuentaNuevaSchema = conRepeticion({
-  nombre: z.string().trim().min(2, "El nombre es demasiado corto").max(80, "El nombre es demasiado largo"),
-});
+export const cuentaNuevaSchema = contrasenas
+  .extend({ nombre: z.string().trim().min(2, "El nombre es demasiado corto").max(80, "El nombre es demasiado largo") })
+  .refine(coinciden, NO_COINCIDEN);
 export type CuentaNuevaDatos = z.infer<typeof cuentaNuevaSchema>;
 
 export const cuentaExistenteSchema = z.object({ contrasena: z.string().min(1, "Escribe tu contraseña") });
 export type CuentaExistenteDatos = z.infer<typeof cuentaExistenteSchema>;
 
-export const nuevaContrasenaSchema = conRepeticion({});
+export const nuevaContrasenaSchema = contrasenas.refine(coinciden, NO_COINCIDEN);
 export type NuevaContrasenaDatos = z.infer<typeof nuevaContrasenaSchema>;
 
 export const cambiarContrasenaSchema = z

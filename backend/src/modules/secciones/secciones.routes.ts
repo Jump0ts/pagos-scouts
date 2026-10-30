@@ -9,7 +9,7 @@ import { crearSeccionSchema, editarSeccionSchema, ordenSeccionesSchema } from ".
 
 export const seccionesRouter = Router();
 
-const seleccion = { id: true, nombre: true, orden: true, color: true, archivada: true } as const;
+const seleccion = { id: true, nombre: true, orden: true, color: true, edadMaxima: true, archivada: true } as const;
 
 const nombreRepetido = (error: unknown) => {
   if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {

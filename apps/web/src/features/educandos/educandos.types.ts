@@ -15,10 +15,12 @@ export type ListaEducandos = {
   educandos: EducandoDeLista[];
 };
 
-// Lo que debe y ha pagado en un evento del curso activo (D-41).
+// Lo que debe y ha pagado en un evento del curso activo (D-41), o lo que le falta de uno anterior (D-82).
 export type CargoEnFicha = {
   id: string;
   evento: { id: string; nombre: string };
+  // El curso del evento si no es el activo; null en los del curso activo.
+  cursoAnterior: string | null;
   importeCentimos: number;
   pagadoCentimos: number;
   estado: EstadoCargo;
