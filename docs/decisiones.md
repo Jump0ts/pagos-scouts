@@ -163,6 +163,15 @@ No se borra la antigua.
 | # | Decisión | Detalle |
 |---|---|---|
 | D-78 | **Dependencias: se sube Zod y Vitest; Prisma y deepmerge se aceptan documentados** | **Zod 3 → 4** en la API y la web: Zod 3 podía agotar la memoria al validar listas enormes con tope. Ya lo frenaban los límites de tamaño (100 KB en la API, 32 KB en el formulario público), pero queda resuelto del todo. Los mensajes propios se mantienen; ahora también salen cuando llega un tipo equivocado, no solo cuando falta el campo. **Vitest 3 → 4.1.12** (solo desarrollo y CI): quita `tinypool` (crítica) y arregla `@vitest/mocker`. **Se acepta `deepmerge-ts`** (alta, dentro de Prisma): solo lo usa la herramienta de Prisma al leer su propia configuración y nadie de fuera puede llegar ahí; se resuelve al subir a Prisma 7, que es una migración grande y tendrá su propia rama. **Se acepta `deepmerge`** (baja, dentro de `vite-plugin-pwa`): solo se usa al compilar la web con nuestra propia configuración y no hay versión arreglada. |
+## Bloque 16 — Parte 9: paso de curso (2026-10-30)
+
+| # | Decisión | Detalle |
+|---|---|---|
+| D-79 | **El paso de curso propone por año de nacimiento; decide Tesorería** | Concreta D-2 y D-31. Cada sección tiene una edad máxima opcional, editable en Secciones; por defecto Castores 7, Manada 10, Tropa 13, Unidad 16 y Clan 21, y Scouters sin edad. La app propone subir a quien supere la edad máxima de su sección en el año natural en que empieza el curso nuevo (en 2027-28 dejan Castores los que cumplen 8 o más en 2027). Quien no tiene fecha de nacimiento se queda en su sección y se sube a mano. Todo se revisa antes de confirmar. |
+| D-80 | **Casilla «Sigue» por niño** | Todos siguen por defecto, salvo los de la última sección que superan su edad máxima, que aparecen como «Termina». Quien no sigue no se matricula en el curso nuevo; conserva su historial, su familia y sus deudas. |
+| D-81 | **El curso nuevo se activa al confirmar** | Un solo paso: se revisa, se confirma y el curso nuevo queda activo. Nada se guarda antes de confirmar. El curso anterior sigue consultable (D-2). |
+| D-82 | **Las deudas de cursos anteriores también cuadran** | Modifica D-43. Un pago del banco se intenta cuadrar con todo lo pendiente o a medias de la familia, sea del curso que sea (por ejemplo, el campamento de verano pagado en septiembre). Si hay más de una combinación posible, va a Dudas (D-5). |
+| D-83 | **El paso de curso es la parte 9** | Llega antes de septiembre de 2027, como pedía D-31. |
 
 Los importes se guardan en céntimos (enteros), para no tener errores de redondeo.
 
