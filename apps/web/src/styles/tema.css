@@ -93,6 +93,9 @@
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    /* Lo que avisa de que algo está en marcha sigue moviéndose, más despacio: un indicador quieto parece colgado. */
+    .animate-spin { animation-duration: 1.5s !important; }
+    .animate-pulse { animation-duration: 2s !important; }
     /* Con menos movimiento, los diálogos solo aparecen con un fundido, sin desplazarse. */
     [role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"] { animation: fundido-entra 150ms ease-out !important; }
   }
