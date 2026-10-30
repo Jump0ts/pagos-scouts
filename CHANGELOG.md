@@ -16,8 +16,9 @@ still change.
   for Treasury to review them with a traffic light (recognised, doubtful, not in the roster) and a "possible change"
   warning for repeated submissions; only then do they count. Orders can also be added by hand, closed when sent to the
   supplier and reopened.
-- Exports per person and for the supplier (units per article and option, and the texts to print without saying whose
-  they are).
+- Exports per person and for the supplier. The supplier's one is a single sheet with article, options, units and the
+  name to print: units without a name are added up in one row and each name gets its own row (the same name with the
+  same options is added up), without saying whose they are.
 - Protection of the public form without third parties: rate limits in nginx and in the API, a signed ticket with a
   minimum filling time, a honeypot field, a size limit and a cap of pending submissions per order. Unreviewed
   submissions are deleted 30 days after the order closes or ends.

@@ -1,4 +1,4 @@
-import { LineaNoValida, prepararLinea, prepararLineas, resumenProveedor, type ArticuloCatalogo } from "../src/modules/pedidos/pedidos.calculo.js";
+import { filasProveedor, LineaNoValida, prepararLinea, prepararLineas, resumenProveedor, type ArticuloCatalogo } from "../src/modules/pedidos/pedidos.calculo.js";
 import { buscarPersona, type Candidato } from "../src/modules/pedidos/pedidos.revision.js";
 import { textoParaExcel } from "../src/utils/hoja.js";
 
@@ -115,6 +115,45 @@ describe("resumenProveedor", () => {
       { articulo: "Camiseta", opciones: "Talla: 9/10", texto: "Nombre al dorso: Nora" },
       { articulo: "Camiseta", opciones: "Talla: 11/12", texto: "Nombre al dorso: Bruno" },
     ]);
+  });
+});
+
+describe("filasProveedor (Excel del proveedor en una hoja)", () => {
+  const sudadera = (talla: string, nombre?: string) => ({
+    articulo: "Sudadera",
+    elecciones: [
+      { opcion: "Talla", tipo: "LISTA" as const, valor: talla, suplementoCentimos: 0 },
+      ...(nombre ? [{ opcion: "Nombre al dorso", tipo: "TEXTO" as const, valor: nombre, suplementoCentimos: 300 }] : []),
+    ],
+  });
+
+  it("10 de la talla 12 con 2 nombres: 8 sin nombre y una fila por nombre; el mismo nombre repetido se suma", () => {
+    const lineas = [
+      ...Array.from({ length: 8 }, () => sudadera("12")),
+      sudadera("12", "Nora"),
+      sudadera("12", "Bruno"),
+      sudadera("9/10"),
+      sudadera("9/10", "Leo"),
+      sudadera("9/10", "Leo"),
+    ];
+    expect(filasProveedor(lineas)).toEqual([
+      { articulo: "Sudadera", opciones: "Talla: 9/10", unidades: 1, nombre: "" },
+      { articulo: "Sudadera", opciones: "Talla: 9/10", unidades: 2, nombre: "Leo" },
+      { articulo: "Sudadera", opciones: "Talla: 12", unidades: 8, nombre: "" },
+      { articulo: "Sudadera", opciones: "Talla: 12", unidades: 1, nombre: "Bruno" },
+      { articulo: "Sudadera", opciones: "Talla: 12", unidades: 1, nombre: "Nora" },
+    ]);
+  });
+
+  it("con varias opciones de texto, el nombre las junta", () => {
+    const linea = {
+      articulo: "Camiseta",
+      elecciones: [
+        { opcion: "Nombre", tipo: "TEXTO" as const, valor: "Nora", suplementoCentimos: 0 },
+        { opcion: "Número", tipo: "TEXTO" as const, valor: "7", suplementoCentimos: 0 },
+      ],
+    };
+    expect(filasProveedor([linea])).toEqual([{ articulo: "Camiseta", opciones: "", unidades: 1, nombre: "Nombre: Nora · Número: 7" }]);
   });
 });
 

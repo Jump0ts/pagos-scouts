@@ -364,9 +364,8 @@ describe("exportar", () => {
     expect(filas(personas).at(-1)).toEqual(["Nora", "Vidal Soler", "Manada", "Camiseta · XL · Nombre al dorso «Nora»", 17, 0, 17, "Pendiente"]);
 
     const proveedor = leer(await binario(e.admin.get(`/api/pedidos/${e.pedidoId}/exportar?vista=proveedor`)).expect(200));
-    expect(filas(proveedor).at(-1)).toEqual(["Camiseta", "Talla: XL", 1]);
-    // Los textos, sin decir de quien son.
-    expect(filas(proveedor, 1)).toEqual([["Artículo", "Opciones", "Texto"], ["Camiseta", "Talla: XL", "Nombre al dorso: Nora"]]);
+    // Todo en una hoja: articulo, opciones, unidades y nombre, sin decir de quien es.
+    expect(filas(proveedor)).toEqual([["Sudaderas 2026"], ["1 unidad"], [], ["Artículo", "Opciones", "Unidades", "Nombre"], ["Camiseta", "Talla: XL", 1, "Nora"]]);
   });
 });
 
